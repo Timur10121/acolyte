@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACOLYTE — Прототип страницы товара v1.0</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+
+    /* ==========================================================
+       1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (идентичны главной и каталогу)
+       ========================================================== */
+    :root {
+      --bg: #0D0D0B;
+      --bg-raise: #171613;
+      --ink: #EDEAE1;
+      --ink-dim: #8C887C;
+      --olive: #6B6F52;
+      --olive-bright: #9BA179;
+      --line: #2A2925;
+
+      --font-display: 'Big Shoulders Display', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-weight: 300; overflow-x: hidden; cursor: none; }
+    @media (max-width: 860px) { body { cursor: auto; } }
+    ::selection { background: var(--olive); color: #0D0D0B; }
+    a { color: inherit; text-decoration: none; }
+    section { position: relative; }
+    button { font-family: inherit; background: none; border: none; color: inherit; cursor: pointer; }
+
+    /* ==========================================================
+       2. ЗЕРНО + КАСТОМНЫЙ КУРСОР
+       ========================================================== */
+    #grain {
+      position: fixed; inset: 0; z-index: 998; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    #cursor-dot, #cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 999; border-radius: 50%; transform: translate(-50%, -50%); }
+    #cursor-dot { width: 6px; height: 6px; background: var(--olive-bright); }
+    #cursor-ring { width: 34px; height: 34px; border: 1px solid rgba(237, 234, 225, 0.4); transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease; }
+    #cursor-ring.hover { width: 64px; height: 64px; background: rgba(155, 161, 121, 0.12); border-color: var(--olive-bright); }
+    @media (max-width: 860px) { #cursor-dot, #cursor-ring { display: none; } }
+
+    /* ==========================================================
+       3. ПЛЕЙСХОЛДЕРЫ ФОТО
+       ========================================================== */
+    .ph {
+      position: relative; overflow: hidden;
+      background: radial-gradient(120% 140% at 15% 10%, rgba(255, 255, 255, 0.05), transparent 55%), linear-gradient(155deg, #24231f 0%, #14130f 45%, #1c1b17 100%);
+    }
+    .ph::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 9px);
+    }
+    .ph-label {
+      position: absolute; left: 0; bottom: 0; z-index: 1; font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: 0.06em; color: rgba(237, 234, 225, 0.45); padding: 16px 18px; text-transform: uppercase;
+    }
+
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.9s ease, transform 0.9s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ==========================================================
+       4. TICKER + HEADER
+       ========================================================== */
+    .ticker-bar {
+      position: relative; z-index: 97; background: var(--bg-raise); border-bottom: 1px solid var(--line);
+      overflow: hidden; height: 34px; display: flex; align-items: center;
+    }
+    .ticker-track { display: flex; white-space: nowrap; animation: ticker 22s linear infinite; }
+    .ticker-track span { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); padding: 0 28px; }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    header {
+      position: fixed; top: 34px; left: 0; width: 100%; z-index: 100; display: flex; align-items: center;
+      justify-content: space-between; padding: 26px 48px; background: transparent; border-bottom: 1px solid transparent;
+      transition: background 280ms ease, padding 280ms ease, backdrop-filter 280ms ease, border-color 280ms ease, top 280ms ease;
+    }
+    header.scrolled { top: 0; padding: 16px 48px; background: rgba(13, 13, 11, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+    .logo { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: 0.14em; transition: font-size 280ms ease; }
+    header.scrolled .logo { font-size: 20px; }
+    nav ul { display: flex; gap: 34px; list-style: none; }
+    nav a { font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 500; opacity: 0.85; position: relative; }
+    nav a::after { content: ''; position: absolute; left: 0; bottom: -6px; width: 0; height: 1px; background: var(--olive-bright); transition: width 220ms ease; }
+    nav a:hover::after, nav a.active::after { width: 100%; }
+    nav a.active { opacity: 1; color: var(--olive-bright); }
+    .header-icons { display: flex; gap: 22px; align-items: center; }
+    .header-icons span { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; cursor: pointer; }
+
+    .breadcrumb {
+      position: fixed; top: 96px; left: 48px; z-index: 90; font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: 0.06em; color: var(--ink-dim); text-transform: uppercase;
+    }
+    .breadcrumb span { color: var(--ink); }
+    @media (max-width: 860px) { .breadcrumb { display: none; } }
+
+    /* ==========================================================
+       5. ПРАВАЯ НАВИГАЦИЯ (RAIL)
+       ========================================================== */
+    .rail { position: fixed; right: 26px; top: 50%; transform: translateY(-50%); z-index: 90; display: flex; flex-direction: column; gap: 16px; }
+    .rail a { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--ink-dim); display: block; position: relative; transition: background 0.3s ease, border-color 0.3s ease; }
+    .rail a::before {
+      content: attr(data-label); position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim);
+      white-space: nowrap; opacity: 0; transition: opacity 0.25s ease;
+    }
+    .rail a:hover::before { opacity: 1; }
+    .rail a.active { background: var(--olive-bright); border-color: var(--olive-bright); }
+    @media (max-width: 860px) { .rail { display: none; } }
+
+    /* ==========================================================
+       6. SCREEN 01 — HERO ТОВАРА
+       ========================================================== */
+    .p-hero {
+      min-height: 100vh; display: grid; grid-template-columns: 1.1fr 0.9fr; align-items: center;
+      gap: 60px; padding: 150px 48px 80px;
+    }
+    .p-hero-media { position: relative; }
+    .p-hero-media .ph { height: 78vh; min-height: 560px; }
+    .p-hero-counter {
+      position: absolute; left: 20px; bottom: 20px; z-index: 2; font-family: var(--font-mono);
+      font-size: 11px; letter-spacing: 0.08em; color: var(--ink-dim);
+    }
+    .p-hero-info { display: flex; flex-direction: column; align-items: flex-start; }
+    .p-hero-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--olive-bright); text-transform: uppercase; margin-bottom: 16px; }
+    .p-hero-name { font-family: var(--font-display); font-weight: 900; font-size: clamp(38px, 5vw, 64px); text-transform: uppercase; line-height: 1; }
+    .p-hero-color { margin-top: 10px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.06em; color: var(--ink-dim); text-transform: uppercase; }
+    .p-hero-price { margin-top: 20px; font-family: var(--font-mono); font-size: 22px; }
+    .p-hero-fit { margin-top: 10px; font-size: 14px; color: var(--ink-dim); font-style: italic; }
+
+    .p-size-block { margin-top: 40px; width: 100%; max-width: 360px; }
+    .p-size-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 14px; }
+    .p-size-row { display: flex; gap: 22px; }
+    .p-size-opt { display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.05em; }
+    .p-size-dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--ink-dim); transition: background 0.2s ease, border-color 0.2s ease; }
+    .p-size-opt.active .p-size-dot { background: var(--olive-bright); border-color: var(--olive-bright); }
+    .p-size-opt.active { color: var(--olive-bright); }
+
+    .p-add-cart {
+      margin-top: 40px; width: 100%; max-width: 360px; padding: 18px; text-align: center;
+      border: 1px solid var(--ink); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em;
+      text-transform: uppercase; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    .p-add-cart:hover { background: var(--ink); color: var(--bg); }
+    .p-add-cart.added { background: var(--olive-bright); border-color: var(--olive-bright); color: var(--bg); }
+    .p-add-cart.view { background: transparent; color: var(--olive-bright); border-color: var(--olive-bright); }
+
+    @media (max-width: 900px) {
+      .p-hero { grid-template-columns: 1fr; padding: 120px 24px 40px; gap: 30px; }
+      .p-hero-media .ph { height: 62vh; min-height: 420px; }
+      .p-hero-info { align-items: flex-start; padding-bottom: 100px; }
+      .p-size-block, .p-add-cart { max-width: 100%; }
+    }
+
+    /* ---- Мобильная sticky панель покупки ---- */
+    .sticky-buy { display: none; }
+    @media (max-width: 900px) {
+      .sticky-buy {
+        display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+        background: rgba(13, 13, 11, 0.92); backdrop-filter: blur(10px); border-top: 1px solid var(--line);
+        padding: 14px 20px; align-items: center; justify-content: space-between; gap: 16px;
+      }
+      .sticky-buy-price { font-family: var(--font-mono); font-size: 15px; }
+      .sticky-buy button {
+        flex: 1; max-width: 220px; padding: 14px; text-align: center; border: 1px solid var(--ink);
+        font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      }
+      .sticky-buy button.added { background: var(--olive-bright); border-color: var(--olive-bright); color: var(--bg); }
+    }
+
+    /* ==========================================================
+       7. SCREEN 02 — ГАЛЕРЕЯ ТОВАРА
+       ========================================================== */
+    .gallery { padding: 60px 0 0; }
+    .gallery-hero-media { position: relative; height: 92vh; overflow: hidden; margin: 0 48px; }
+    .gallery-hero-media .ph { position: absolute; inset: -4%; width: 108%; height: 108%; transition: transform 0.2s ease-out; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin: 60px 48px 0; background: var(--line); }
+    .gallery-cell { position: relative; height: 460px; overflow: hidden; cursor: pointer; }
+    .gallery-cell .ph { position: absolute; inset: 0; transition: transform 0.5s ease; }
+    .gallery-cell:hover .ph { transform: scale(1.05); }
+    .gallery-view {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 2;
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      opacity: 0; transition: opacity 0.3s ease; background: rgba(13,13,11,0.35);
+    }
+    .gallery-cell:hover .gallery-view { opacity: 1; }
+
+    @media (max-width: 900px) {
+      .gallery-hero-media { margin: 0 24px; height: 70vh; }
+      .gallery-grid { grid-template-columns: 1fr; margin: 30px 24px 0; }
+      .gallery-cell { height: 380px; }
+    }
+
+    /* ==========================================================
+       8. SCREEN 03 — PRODUCT STATEMENT
+       ========================================================== */
+    .statement-product { padding: 200px 48px; text-align: center; }
+    .statement-product .st-name {
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim);
+      text-transform: uppercase; margin-bottom: 40px;
+    }
+    .st-line {
+      font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+      font-size: clamp(24px, 4.4vw, 52px); line-height: 1.25; color: var(--ink-dim);
+      opacity: 0; transform: translateY(16px); transition: opacity 0.7s ease, transform 0.7s ease, color 0.4s ease;
+    }
+    .st-line.visible { opacity: 1; transform: translateY(0); }
+    .st-line.visible.emphasis { color: var(--ink); }
+    @media (max-width: 900px) { .statement-product { padding: 110px 24px; } }
+
+    /* ==========================================================
+       9. SCREEN 04 — MATERIAL EXPERIENCE
+       ========================================================== */
+    .material-block { padding: 140px 48px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: center; }
+    .material-gsm { font-family: var(--font-display); font-weight: 900; font-size: clamp(32px, 5vw, 58px); text-transform: uppercase; letter-spacing: 0.01em; }
+    .material-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--olive-bright); margin: 30px auto;
+      box-shadow: 0 0 0 8px rgba(155,161,121,0.12);
+    }
+    .material-tabs { display: flex; justify-content: center; gap: 50px; margin-top: 20px; }
+    .material-tab {
+      font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ink-dim); padding-bottom: 8px; border-bottom: 1px solid transparent; transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .material-tab.active { color: var(--olive-bright); border-bottom-color: var(--olive-bright); }
+    .material-desc {
+      margin-top: 34px; font-family: var(--font-mono); font-size: 14px; letter-spacing: 0.04em;
+      color: var(--ink); min-height: 24px; transition: opacity 0.25s ease; text-transform: uppercase;
+    }
+    @media (max-width: 900px) {
+      .material-block { padding: 90px 24px; }
+      .material-tabs { gap: 26px; flex-wrap: wrap; }
+    }
+
+    /* ==========================================================
+       10. SCREEN 05 — CONSTRUCTION
+       ========================================================== */
+    .construction { padding: 160px 48px; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 60px; align-items: center; }
+    .construction-head { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 50px; }
+    .construction-item { display: flex; gap: 20px; padding: 30px 0; border-top: 1px solid var(--line); }
+    .construction-item:last-child { border-bottom: 1px solid var(--line); }
+    .construction-num { font-family: var(--font-mono); font-size: 12px; color: var(--olive-bright); flex-shrink: 0; width: 30px; }
+    .construction-title { font-family: var(--font-display); font-weight: 700; font-size: 20px; text-transform: uppercase; }
+    .construction-desc { margin-top: 6px; font-size: 14px; color: var(--ink-dim); max-width: 340px; }
+
+    .construction-media { position: relative; }
+    .construction-media .ph { height: 620px; }
+    .construction-point {
+      position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--olive-bright);
+      box-shadow: 0 0 0 6px rgba(155,161,121,0.15); z-index: 2;
+    }
+    .construction-point::after {
+      content: attr(data-tag); position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); white-space: nowrap;
+      background: rgba(13,13,11,0.7); padding: 4px 8px;
+    }
+    .cp-1 { top: 22%; left: 60%; }
+    .cp-2 { top: 68%; left: 25%; }
+
+    @media (max-width: 900px) {
+      .construction { grid-template-columns: 1fr; padding: 90px 24px; gap: 40px; }
+      .construction-media .ph { height: 420px; }
+    }
+
+    /* ==========================================================
+       11. SCREEN 06 — SIZE SELECTION
+       ========================================================== */
+    .size-select { padding: 160px 48px; }
+    .size-select-head { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 50px; text-align: center; }
+    .size-select-title { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(30px, 4vw, 52px); text-align: center; margin-bottom: 70px; }
+
+    .size-rows { max-width: 640px; margin: 0 auto; }
+    .size-row-item {
+      display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 20px;
+      padding: 26px 10px; border-top: 1px solid var(--line); cursor: pointer; transition: background 0.2s ease;
+    }
+    .size-rows .size-row-item:last-child { border-bottom: 1px solid var(--line); }
+    .size-row-item:hover, .size-row-item.active { background: rgba(155,161,121,0.06); }
+    .size-row-height { font-family: var(--font-mono); font-size: 13px; color: var(--ink-dim); letter-spacing: 0.04em; }
+    .size-row-letter { font-family: var(--font-display); font-weight: 700; font-size: 28px; text-transform: uppercase; color: var(--ink-dim); transition: color 0.2s ease; }
+    .size-row-item.active .size-row-letter { color: var(--olive-bright); }
+    .size-row-check { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ink-dim); }
+    .size-row-item.active .size-row-check { background: var(--olive-bright); border-color: var(--olive-bright); }
+
+    .size-model-note {
+      display: flex; justify-content: center; gap: 60px; margin-top: 50px;
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim);
+    }
+    .size-model-note b { display: block; color: var(--ink); font-size: 16px; font-family: var(--font-display); margin-top: 4px; }
+    @media (max-width: 900px) {
+      .size-select { padding: 90px 24px; }
+      .size-model-note { gap: 30px; flex-wrap: wrap; }
+    }
+
+    /* ==========================================================
+       12. SCREEN 07 — COMPLETE THE UNIFORM
+       ========================================================== */
+    .uniform { padding: 160px 48px; }
+    .uniform-head { text-align: center; margin-bottom: 60px; }
+    .uniform-head span { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; }
+    .uniform-head h2 { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; font-size: clamp(30px, 4vw, 54px); margin-top: 10px; }
+    .uniform-row { display: flex; align-items: center; gap: 24px; }
+    .uniform-card { flex: 1; position: relative; cursor: pointer; }
+    .uniform-card .ph { height: 460px; transition: transform 0.4s ease; }
+    .uniform-card:hover .ph { transform: scale(1.03); }
+    .uniform-name { margin-top: 14px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .uniform-price { margin-top: 4px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim); opacity: 0; transition: opacity 0.3s ease; }
+    .uniform-card:hover .uniform-price { opacity: 1; }
+    .uniform-plus { font-family: var(--font-display); font-size: 34px; color: var(--ink-dim); flex-shrink: 0; }
+
+    @media (max-width: 900px) {
+      .uniform { padding: 90px 24px; }
+      .uniform-row { flex-direction: column; }
+      .uniform-plus { transform: rotate(90deg); }
+      .uniform-card .ph { width: 100%; }
+    }
+
+    /* ==========================================================
+       13. SCREEN 08 — REVIEWS / TRUST
+       ========================================================== */
+    .reviews { padding: 140px 48px; border-top: 1px solid var(--line); }
+    .review-card { max-width: 560px; margin: 0 auto; text-align: center; }
+    .review-stars { color: var(--olive-bright); font-size: 16px; letter-spacing: 4px; margin-bottom: 24px; }
+    .review-quote { font-family: var(--font-display); font-weight: 400; font-size: clamp(20px, 2.6vw, 30px); line-height: 1.35; }
+    .review-author { margin-top: 20px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase; }
+
+    .trust-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 90px; background: var(--line); }
+    .trust-item { background: var(--bg); padding: 40px 30px; text-align: center; }
+    .trust-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--olive-bright); text-transform: uppercase; margin-bottom: 10px; }
+    .trust-value { font-family: var(--font-display); font-weight: 700; font-size: 18px; text-transform: uppercase; }
+    @media (max-width: 900px) {
+      .reviews { padding: 90px 24px; }
+      .trust-row { grid-template-columns: 1fr; margin-top: 60px; }
+    }
+
+    /* ==========================================================
+       14. SCREEN 09 — FINAL BRAND STATEMENT
+       ========================================================== */
+    .final-statement {
+      padding: 220px 48px; text-align: center; border-top: 1px solid var(--line);
+      background: radial-gradient(80% 60% at 50% 50%, #141310 0%, #0a0a08 70%, #060605 100%);
+    }
+    .final-line {
+      font-family: var(--font-display); font-weight: 900; text-transform: uppercase;
+      font-size: clamp(26px, 5vw, 60px); line-height: 1.15;
+    }
+    .final-line.dim { color: var(--ink-dim); font-weight: 700; font-size: clamp(18px, 2.6vw, 30px); margin: 18px 0; }
+    .final-wordmark { margin-top: 50px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.3em; color: var(--olive-bright); }
+    @media (max-width: 900px) { .final-statement { padding: 130px 24px; } }
+
+    /* ==========================================================
+       15. FOOTER
+       ========================================================== */
+    .footer-marquee { overflow: hidden; padding: 26px 0; border-top: 1px solid var(--line); }
+    .footer-marquee-track { display: flex; white-space: nowrap; animation: ticker 18s linear infinite; }
+    .footer-marquee-track span { padding: 0 40px; font-family: var(--font-display); font-weight: 900; font-size: 96px; letter-spacing: 0.02em; text-transform: uppercase; color: transparent; -webkit-text-stroke: 1px var(--line); }
+    footer { padding: 80px 48px 120px; }
+    .footer-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 60px; margin-bottom: 80px; }
+    .footer-cols { display: flex; gap: 80px; flex-wrap: wrap; }
+    .footer-col h4 { margin-bottom: 18px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+    .footer-col a { display: block; margin-bottom: 12px; font-size: 14px; opacity: 0.85; }
+    .footer-newsletter { max-width: 280px; }
+    .footer-newsletter input { width: 100%; margin-top: 16px; padding: 10px 0; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-family: var(--font-body); font-size: 14px; }
+    .footer-newsletter input::placeholder { color: var(--ink-dim); }
+    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 30px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; color: var(--ink-dim); }
+
+    @media (max-width: 860px) {
+      header { padding: 20px 24px; }
+      nav { display: none; }
+      footer { padding: 60px 24px 130px; }
+      .footer-marquee-track span { font-size: 48px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="grain"></div>
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+
+  <!-- ================= БЕГУЩАЯ СТРОКА ================= -->
+  <div class="ticker-bar">
+    <div class="ticker-track">
+      <span>НОВЫЙ ДРОП — VOID 2026</span>
+      <span>БЕСПЛАТНАЯ ДОСТАВКА ОТ 15 000 ₽</span>
+      <span>ВОЗВРАТ В ТЕЧЕНИЕ 14 ДНЕЙ</span>
+      <span>УЧАСТНИКАМ — РАННИЙ ДОСТУП</span>
+      <span>НОВЫЙ ДРОП — VOID 2026</span>
+      <span>БЕСПЛАТНАЯ ДОСТАВКА ОТ 15 000 ₽</span>
+      <span>ВОЗВРАТ В ТЕЧЕНИЕ 14 ДНЕЙ</span>
+      <span>УЧАСТНИКАМ — РАННИЙ ДОСТУП</span>
+    </div>
+  </div>
+
+  <!-- ================= ШАПКА ================= -->
+  <header id="siteHeader">
+    <div class="logo">ACOLYTE</div>
+    <nav>
+      <ul>
+        <li><a href="#" data-cursor="link">Новинки</a></li>
+        <li><a href="#" class="active" data-cursor="link">Каталог</a></li>
+        <li><a href="#" data-cursor="link">Коллекции</a></li>
+        <li><a href="#" data-cursor="link">Лукбук</a></li>
+        <li><a href="#" data-cursor="link">Журнал</a></li>
+      </ul>
+    </nav>
+    <div class="header-icons">
+      <span data-cursor="link">Поиск</span>
+      <span data-cursor="link">Профиль</span>
+      <span data-cursor="link">Избранное</span>
+      <span data-cursor="link">Корзина (0)</span>
+    </div>
+  </header>
+
+  <div class="breadcrumb">Каталог / Tops / <span>Tech Hoodie 02</span></div>
+
+  <!-- ================= НАВИГАЦИЯ ПО РАЗДЕЛАМ ================= -->
+  <div class="rail">
+    <a href="#hero" data-label="Товар" class="active"></a>
+    <a href="#gallery" data-label="Галерея"></a>
+    <a href="#statement" data-label="О вещи"></a>
+    <a href="#material" data-label="Материал"></a>
+    <a href="#construction" data-label="Конструкция"></a>
+    <a href="#size" data-label="Размер"></a>
+    <a href="#uniform" data-label="Комплект"></a>
+    <a href="#reviews" data-label="Отзывы"></a>
+  </div>
+
+  <!-- ================= SCREEN 01 — HERO ТОВАРА ================= -->
+  <section class="p-hero" id="hero">
+    <div class="p-hero-media">
+      <div class="ph"><div class="ph-label">Tech Hoodie 02 — Front</div></div>
+      <div class="p-hero-counter">01 / 06</div>
+    </div>
+    <div class="p-hero-info reveal">
+      <div class="p-hero-eyebrow">Core System</div>
+      <h1 class="p-hero-name">Tech Hoodie 02</h1>
+      <div class="p-hero-color">Black</div>
+      <div class="p-hero-price">12 900 ₽</div>
+      <div class="p-hero-fit">Oversized fit</div>
+
+      <div class="p-size-block">
+        <div class="p-size-label">Size</div>
+        <div class="p-size-row" id="heroSizeRow">
+          <div class="p-size-opt" data-size="S"><span class="p-size-dot"></span>S</div>
+          <div class="p-size-opt active" data-size="M"><span class="p-size-dot"></span>M</div>
+          <div class="p-size-opt" data-size="L"><span class="p-size-dot"></span>L</div>
+          <div class="p-size-opt" data-size="XL"><span class="p-size-dot"></span>XL</div>
+        </div>
+      </div>
+
+      <button class="p-add-cart" id="heroAddCart" data-cursor="link">Add Cart</button>
+    </div>
+  </section>
+
+  <!-- Мобильная sticky-панель покупки -->
+  <div class="sticky-buy">
+    <div class="sticky-buy-price">12 900 ₽</div>
+    <button id="stickyAddCart">Add To Cart</button>
+  </div>
+
+  <!-- ================= SCREEN 02 — ГАЛЕРЕЯ ТОВАРА ================= -->
+  <section class="gallery reveal" id="gallery">
+    <div class="gallery-hero-media" id="galleryHeroMedia">
+      <div class="ph"><div class="ph-label">Модель в движении</div></div>
+    </div>
+    <div class="gallery-grid">
+      <div class="gallery-cell" data-cursor="link">
+        <div class="ph"><div class="ph-label">Detail</div></div>
+        <div class="gallery-view">View Details</div>
+      </div>
+      <div class="gallery-cell" data-cursor="link">
+        <div class="ph"><div class="ph-label">Fabric</div></div>
+        <div class="gallery-view">View Details</div>
+      </div>
+      <div class="gallery-cell" data-cursor="link">
+        <div class="ph"><div class="ph-label">Back</div></div>
+        <div class="gallery-view">View Details</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SCREEN 03 — PRODUCT STATEMENT ================= -->
+  <section class="statement-product" id="statement">
+    <div class="st-name">Tech Hoodie 02</div>
+    <div class="st-line">Built for everyday movement.</div>
+    <div class="st-line emphasis">Heavyweight cotton.</div>
+    <div class="st-line">Structured silhouette.</div>
+    <div class="st-line emphasis">Designed to last.</div>
+  </section>
+
+  <!-- ================= SCREEN 04 — MATERIAL EXPERIENCE ================= -->
+  <section class="material-block reveal" id="material">
+    <div class="material-gsm">450 GSM Cotton</div>
+    <div class="material-dot"></div>
+    <div class="material-tabs">
+      <div class="material-tab active" data-desc="Dense fabric that resists wear from daily use.">Weight</div>
+      <div class="material-tab" data-desc="Keeps shape wash after wash.">Structure</div>
+      <div class="material-tab" data-desc="Built to outlast a single season.">Durability</div>
+    </div>
+    <div class="material-desc" id="materialDesc">Dense fabric that resists wear from daily use.</div>
+  </section>
+
+  <!-- ================= SCREEN 05 — CONSTRUCTION ================= -->
+  <section class="construction reveal" id="construction">
+    <div>
+      <div class="construction-head">Details</div>
+      <div class="construction-item">
+        <div class="construction-num">01</div>
+        <div>
+          <div class="construction-title">Dropped shoulders</div>
+          <div class="construction-desc">Создают объёмный силуэт и дополнительную свободу движения в плечевом поясе.</div>
+        </div>
+      </div>
+      <div class="construction-item">
+        <div class="construction-num">02</div>
+        <div>
+          <div class="construction-title">Reinforced seams</div>
+          <div class="construction-desc">Повышенная износостойкость в зонах наибольшей нагрузки.</div>
+        </div>
+      </div>
+      <div class="construction-item">
+        <div class="construction-num">03</div>
+        <div>
+          <div class="construction-title">Oversized cut</div>
+          <div class="construction-desc">Свобода движения без потери формы вещи.</div>
+        </div>
+      </div>
+    </div>
+    <div class="construction-media">
+      <div class="ph"><div class="ph-label">Крупный план конструкции</div></div>
+      <div class="construction-point cp-1" data-tag="Seam"></div>
+      <div class="construction-point cp-2" data-tag="Cuff"></div>
+    </div>
+  </section>
+
+  <!-- ================= SCREEN 06 — SIZE SELECTION ================= -->
+  <section class="size-select reveal" id="size">
+    <div class="size-select-head">Size Select</div>
+    <div class="size-select-title">Find Your Fit</div>
+
+    <div class="size-rows" id="sizeRows">
+      <div class="size-row-item" data-size="S">
+        <div class="size-row-height">165–175 CM</div>
+        <div class="size-row-letter">S</div>
+        <div class="size-row-check"></div>
+      </div>
+      <div class="size-row-item active" data-size="M">
+        <div class="size-row-height">175–185 CM</div>
+        <div class="size-row-letter">M</div>
+        <div class="size-row-check"></div>
+      </div>
+      <div class="size-row-item" data-size="L">
+        <div class="size-row-height">185–195 CM</div>
+        <div class="size-row-letter">L</div>
+        <div class="size-row-check"></div>
+      </div>
+      <div class="size-row-item" data-size="XL">
+        <div class="size-row-height">195+ CM</div>
+        <div class="size-row-letter">XL</div>
+        <div class="size-row-check"></div>
+      </div>
+    </div>
+
+    <div class="size-model-note">
+      <div>Model<b>185 CM</b></div>
+      <div>Wearing<b>L</b></div>
+    </div>
+  </section>
+
+  <!-- ================= SCREEN 07 — COMPLETE THE UNIFORM ================= -->
+  <section class="uniform reveal" id="uniform">
+    <div class="uniform-head">
+      <span>Build Your Uniform</span>
+      <h2>Complete The Look</h2>
+    </div>
+    <div class="uniform-row">
+      <div class="uniform-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Tech Hoodie 02</div></div>
+        <div class="uniform-name">Tech Hoodie</div>
+        <div class="uniform-price">12 900 ₽</div>
+      </div>
+      <div class="uniform-plus">+</div>
+      <div class="uniform-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Cargo System Pants</div></div>
+        <div class="uniform-name">Cargo System Pants</div>
+        <div class="uniform-price">21 000 ₽</div>
+      </div>
+      <div class="uniform-plus">+</div>
+      <div class="uniform-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Utility Bag</div></div>
+        <div class="uniform-name">Utility Bag</div>
+        <div class="uniform-price">8 400 ₽</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SCREEN 08 — REVIEWS / TRUST ================= -->
+  <section class="reviews reveal" id="reviews">
+    <div class="review-card">
+      <div class="review-stars">★★★★★</div>
+      <div class="review-quote">«После года выглядит как новая»</div>
+      <div class="review-author">Никита</div>
+    </div>
+    <div class="trust-row">
+      <div class="trust-item">
+        <div class="trust-label">Shipping</div>
+        <div class="trust-value">3–5 Days</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-label">Return</div>
+        <div class="trust-value">14 Days</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-label">Quality</div>
+        <div class="trust-value">Premium Materials</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SCREEN 09 — FINAL BRAND STATEMENT ================= -->
+  <section class="final-statement reveal">
+    <div class="final-line">We Don't Follow Trends</div>
+    <div class="final-line dim">Designed To Last.</div>
+    <div class="final-line dim">Less Noise.<br>More Purpose.</div>
+    <div class="final-wordmark">ACOLYTE</div>
+  </section>
+
+  <!-- ================= БЕГУЩИЙ WORDMARK ================= -->
+  <div class="footer-marquee">
+    <div class="footer-marquee-track">
+      <span>ACOLYTE — ACOLYTE — ACOLYTE — ACOLYTE —</span>
+      <span>ACOLYTE — ACOLYTE — ACOLYTE — ACOLYTE —</span>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Магазин</h4>
+          <a href="#">Outerwear</a>
+          <a href="#">Tops</a>
+          <a href="#">Bottoms</a>
+          <a href="#">Accessories</a>
+        </div>
+        <div class="footer-col">
+          <h4>О бренде</h4>
+          <a href="#">Бренд</a>
+          <a href="#">Материалы</a>
+          <a href="#">Журнал</a>
+        </div>
+        <div class="footer-col">
+          <h4>Помощь</h4>
+          <a href="#">Доставка</a>
+          <a href="#">Возврат</a>
+          <a href="#">Контакты</a>
+        </div>
+        <div class="footer-col footer-newsletter">
+          <h4>Рассылка</h4>
+          <div style="font-size:14px; color:var(--ink-dim);">Первыми узнавайте о новых дропах.</div>
+          <input type="email" placeholder="Ваш email">
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ACOLYTE. ВСЕ ПРАВА ЗАЩИЩЕНЫ.</span>
+      <span>INSTAGRAM · VK · TELEGRAM</span>
+    </div>
+  </footer>
+
+  <script>
+
+    // ---------- 1. Состояние шапки при скролле ----------
+    const header = document.getElementById('siteHeader');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > window.innerHeight * 0.35);
+    }, { passive: true });
+
+    // ---------- 2. Появление блоков при скролле ----------
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+
+    // ---------- 3. Появление строк product statement по очереди ----------
+    const stLines = document.querySelectorAll('.st-line');
+    const stObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          stLines.forEach((line, i) => {
+            setTimeout(() => line.classList.add('visible'), i * 260);
+          });
+          stObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.5 });
+    if (stLines.length) stObserver.observe(document.getElementById('statement'));
+
+    // ---------- 4. Подсветка активного раздела в rail ----------
+    const railLinks = document.querySelectorAll('.rail a');
+    const railSections = Array.from(railLinks).map((a) => document.querySelector(a.getAttribute('href')));
+    const railObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = `#${entry.target.id}`;
+          railLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === id));
+        }
+      });
+    }, { threshold: 0.4 });
+    railSections.forEach((s) => { if (s) railObserver.observe(s); });
+
+    // ---------- 5. Кастомный курсор ----------
+    const cursorDot = document.getElementById('cursor-dot');
+    const cursorRing = document.getElementById('cursor-ring');
+    window.addEventListener('mousemove', (e) => {
+      cursorDot.style.left = `${e.clientX}px`;
+      cursorDot.style.top = `${e.clientY}px`;
+      cursorRing.style.left = `${e.clientX}px`;
+      cursorRing.style.top = `${e.clientY}px`;
+    });
+    document.querySelectorAll('[data-cursor="link"]').forEach((el) => {
+      el.addEventListener('mouseenter', () => cursorRing.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursorRing.classList.remove('hover'));
+    });
+
+    // ---------- 6. Выбор размера в hero ----------
+    document.querySelectorAll('#heroSizeRow .p-size-opt').forEach((opt) => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('#heroSizeRow .p-size-opt').forEach((o) => o.classList.remove('active'));
+        opt.classList.add('active');
+      });
+    });
+
+    // ---------- 7. Add Cart — цепочка состояний ----------
+    function wireAddCart(btn, resetLabel) {
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('view')) return;
+        btn.textContent = 'Added ✓';
+        btn.classList.add('added');
+        setTimeout(() => {
+          btn.textContent = 'View Cart';
+          btn.classList.remove('added');
+          btn.classList.add('view');
+        }, 1400);
+      });
+    }
+    wireAddCart(document.getElementById('heroAddCart'));
+    wireAddCart(document.getElementById('stickyAddCart'));
+
+    // ---------- 8. Material Experience — переключение табов ----------
+    document.querySelectorAll('.material-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.material-tab').forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        const desc = document.getElementById('materialDesc');
+        desc.style.opacity = 0;
+        setTimeout(() => {
+          desc.textContent = tab.dataset.desc;
+          desc.style.opacity = 1;
+        }, 200);
+      });
+    });
+
+    // ---------- 9. Size Selection — выбор строки ----------
+    document.querySelectorAll('.size-row-item').forEach((row) => {
+      row.addEventListener('click', () => {
+        document.querySelectorAll('.size-row-item').forEach((r) => r.classList.remove('active'));
+        row.classList.add('active');
+      });
+    });
+
+    // ---------- 10. Галерея — лёгкое движение фото за курсором ----------
+    const galleryHeroMedia = document.getElementById('galleryHeroMedia');
+    const galleryHeroPh = galleryHeroMedia.querySelector('.ph');
+    galleryHeroMedia.addEventListener('mousemove', (e) => {
+      const rect = galleryHeroMedia.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width - 0.5;
+      const py = (e.clientY - rect.top) / rect.height - 0.5;
+      galleryHeroPh.style.transform = `translate(${px * 16}px, ${py * 16}px) scale(1.03)`;
+    });
+    galleryHeroMedia.addEventListener('mouseleave', () => {
+      galleryHeroPh.style.transform = 'translate(0,0) scale(1)';
+    });
+
+  </script>
+
+</body>
+</html>

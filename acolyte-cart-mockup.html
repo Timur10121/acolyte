@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACOLYTE — Прототип страницы корзины v1.0</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+
+    /* ==========================================================
+       1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (идентичны остальным страницам)
+       ========================================================== */
+    :root {
+      --bg: #0D0D0B;
+      --bg-raise: #171613;
+      --ink: #EDEAE1;
+      --ink-dim: #8C887C;
+      --olive: #6B6F52;
+      --olive-bright: #9BA179;
+      --line: #2A2925;
+
+      --font-display: 'Big Shoulders Display', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-weight: 300; overflow-x: hidden; cursor: none; }
+    @media (max-width: 860px) { body { cursor: auto; } }
+    ::selection { background: var(--olive); color: #0D0D0B; }
+    a { color: inherit; text-decoration: none; }
+    section { position: relative; }
+    button { font-family: inherit; background: none; border: none; color: inherit; cursor: pointer; }
+
+    /* ==========================================================
+       2. ЗЕРНО + КАСТОМНЫЙ КУРСОР
+       ========================================================== */
+    #grain {
+      position: fixed; inset: 0; z-index: 998; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    #cursor-dot, #cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 999; border-radius: 50%; transform: translate(-50%, -50%); }
+    #cursor-dot { width: 6px; height: 6px; background: var(--olive-bright); }
+    #cursor-ring { width: 34px; height: 34px; border: 1px solid rgba(237, 234, 225, 0.4); transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease; }
+    #cursor-ring.hover { width: 64px; height: 64px; background: rgba(155, 161, 121, 0.12); border-color: var(--olive-bright); }
+    @media (max-width: 860px) { #cursor-dot, #cursor-ring { display: none; } }
+
+    /* ==========================================================
+       3. ПЛЕЙСХОЛДЕРЫ ФОТО
+       ========================================================== */
+    .ph {
+      position: relative; overflow: hidden;
+      background: radial-gradient(120% 140% at 15% 10%, rgba(255, 255, 255, 0.05), transparent 55%), linear-gradient(155deg, #24231f 0%, #14130f 45%, #1c1b17 100%);
+    }
+    .ph::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 9px);
+    }
+    .ph-label {
+      position: absolute; left: 0; bottom: 0; z-index: 1; font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: 0.06em; color: rgba(237, 234, 225, 0.45); padding: 16px 18px; text-transform: uppercase;
+      transition: opacity 0.2s ease;
+    }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ==========================================================
+       4. TICKER + HEADER
+       ========================================================== */
+    .ticker-bar {
+      position: relative; z-index: 97; background: var(--bg-raise); border-bottom: 1px solid var(--line);
+      overflow: hidden; height: 34px; display: flex; align-items: center;
+    }
+    .ticker-track { display: flex; white-space: nowrap; animation: ticker 22s linear infinite; }
+    .ticker-track span { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); padding: 0 28px; }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    header {
+      position: fixed; top: 34px; left: 0; width: 100%; z-index: 100; display: flex; align-items: center;
+      justify-content: space-between; padding: 26px 48px; background: transparent; border-bottom: 1px solid transparent;
+      transition: background 280ms ease, padding 280ms ease, backdrop-filter 280ms ease, border-color 280ms ease, top 280ms ease;
+    }
+    header.scrolled { top: 0; padding: 16px 48px; background: rgba(13, 13, 11, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+    .logo { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: 0.14em; transition: font-size 280ms ease; }
+    header.scrolled .logo { font-size: 20px; }
+    nav ul { display: flex; gap: 34px; list-style: none; }
+    nav a { font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 500; opacity: 0.85; position: relative; }
+    nav a::after { content: ''; position: absolute; left: 0; bottom: -6px; width: 0; height: 1px; background: var(--olive-bright); transition: width 220ms ease; }
+    nav a:hover::after, nav a.active::after { width: 100%; }
+    nav a.active { opacity: 1; color: var(--olive-bright); }
+    .header-icons { display: flex; gap: 22px; align-items: center; }
+    .header-icons span { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; cursor: pointer; }
+    .header-icons span.bag-active { color: var(--olive-bright); }
+
+    /* ==========================================================
+       5. ПРАВАЯ НАВИГАЦИЯ (RAIL)
+       ========================================================== */
+    .rail { position: fixed; right: 26px; top: 50%; transform: translateY(-50%); z-index: 90; display: flex; flex-direction: column; gap: 16px; }
+    .rail a { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--ink-dim); display: block; position: relative; transition: background 0.3s ease, border-color 0.3s ease; }
+    .rail a::before {
+      content: attr(data-label); position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim);
+      white-space: nowrap; opacity: 0; transition: opacity 0.25s ease;
+    }
+    .rail a:hover::before { opacity: 1; }
+    .rail a.active { background: var(--olive-bright); border-color: var(--olive-bright); }
+    @media (max-width: 860px) { .rail { display: none; } }
+
+    /* ==========================================================
+       6. ЗАГОЛОВОК СТРАНИЦЫ
+       ========================================================== */
+    .bag-title { padding: 170px 48px 70px; text-align: center; }
+    .bag-title-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 18px; }
+    .bag-title h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(48px, 8vw, 96px); text-transform: uppercase; line-height: 0.95; }
+    .bag-title-sub { margin-top: 18px; font-size: 15px; color: var(--ink-dim); }
+    @media (max-width: 860px) { .bag-title { padding: 130px 24px 50px; } }
+
+    /* ==========================================================
+       7. ОСНОВНОЙ БЛОК КОРЗИНЫ
+       ========================================================== */
+    .bag-layout {
+      display: grid; grid-template-columns: 1fr 380px; gap: 70px; padding: 0 48px 140px; align-items: start;
+    }
+    .bag-list-head {
+      display: grid; grid-template-columns: 280px 1fr; gap: 32px; padding-bottom: 18px; border-bottom: 1px solid var(--line);
+      margin-bottom: 6px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase;
+    }
+
+    .cart-row { display: grid; grid-template-columns: 280px 1fr; gap: 32px; padding: 46px 0; border-bottom: 1px solid var(--line); }
+    .cart-media { position: relative; height: 350px; overflow: hidden; cursor: pointer; }
+    .cart-media .ph { position: absolute; inset: 0; }
+    .cart-media-index {
+      position: absolute; right: 14px; top: 14px; z-index: 2; font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase;
+    }
+
+    .cart-info { display: flex; flex-direction: column; }
+    .cart-name { font-family: var(--font-display); font-weight: 700; font-size: 26px; text-transform: uppercase; }
+    .cart-variant { margin-top: 8px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-dim); text-transform: uppercase; }
+
+    .cart-material {
+      margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); max-width: 320px;
+    }
+    .cart-material-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--olive-bright); text-transform: uppercase; margin-bottom: 8px; }
+    .cart-material-line { font-size: 13px; color: var(--ink-dim); line-height: 1.6; }
+
+    .cart-row-bottom { margin-top: auto; padding-top: 26px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+    .cart-price { font-family: var(--font-mono); font-size: 18px; }
+
+    .qty-stepper { display: flex; align-items: center; gap: 18px; font-family: var(--font-mono); font-size: 14px; }
+    .qty-btn { width: 30px; height: 30px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; transition: border-color 0.2s ease, color 0.2s ease; }
+    .qty-btn:hover { border-color: var(--olive-bright); color: var(--olive-bright); }
+    .qty-value { min-width: 16px; text-align: center; display: inline-block; transition: opacity 0.15s ease, transform 0.15s ease; }
+    .qty-value.pulse { opacity: 0; transform: translateY(-4px); }
+
+    .cart-remove {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ink-dim); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .cart-remove:hover { color: var(--ink); border-color: var(--ink); }
+
+    @media (max-width: 900px) {
+      .bag-layout { grid-template-columns: 1fr; padding: 0 24px 90px; gap: 50px; }
+      .bag-list-head { display: none; }
+      .cart-row { grid-template-columns: 1fr; }
+      .cart-media { height: 420px; }
+    }
+
+    /* ==========================================================
+       8. SUMMARY (STICKY)
+       ========================================================== */
+    .summary-box { position: sticky; top: 120px; border: 1px solid var(--line); padding: 40px 32px; background: var(--bg-raise); }
+    .summary-title { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 30px; }
+    .summary-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; }
+    .summary-row .label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase; }
+    .summary-row .value { font-family: var(--font-mono); font-size: 14px; }
+    .summary-row .value.dim { color: var(--ink-dim); font-size: 12px; text-transform: uppercase; }
+    .summary-divider { border-top: 1px solid var(--line); margin: 26px 0; }
+    .summary-total .label, .summary-total .value { font-size: 15px; color: var(--ink); }
+    .summary-total .value { font-family: var(--font-mono); font-size: 22px; transition: opacity 0.2s ease; }
+
+    .checkout-btn {
+      width: 100%; margin-top: 32px; padding: 18px; text-align: center; background: var(--ink); color: var(--bg);
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+      transition: background 0.3s ease, opacity 0.3s ease;
+    }
+    .checkout-btn:hover { background: var(--olive-bright); }
+
+    @media (max-width: 900px) { .summary-box { position: static; } }
+
+    /* ==========================================================
+       9. МОБИЛЬНАЯ STICKY-ПАНЕЛЬ ОФОРМЛЕНИЯ
+       ========================================================== */
+    .sticky-checkout { display: none; }
+    @media (max-width: 900px) {
+      .sticky-checkout {
+        display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+        background: rgba(13, 13, 11, 0.92); backdrop-filter: blur(10px); border-top: 1px solid var(--line);
+        padding: 14px 20px; align-items: center; justify-content: space-between; gap: 16px;
+      }
+      .sticky-checkout .total { font-family: var(--font-mono); font-size: 15px; }
+      .sticky-checkout button {
+        flex: 1; max-width: 220px; padding: 14px; text-align: center; background: var(--ink); color: var(--bg);
+        font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      }
+      body.has-mobile-sticky { padding-bottom: 74px; }
+    }
+
+    /* ==========================================================
+       10. ACOLYTE STANDARD (TRUST)
+       ========================================================== */
+    .standard { padding: 120px 48px; border-top: 1px solid var(--line); text-align: center; }
+    .standard-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 44px; }
+    .standard-list { display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; }
+    .standard-item { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+    .standard-item .check { color: var(--olive-bright); }
+    @media (max-width: 900px) { .standard { padding: 80px 24px; } .standard-list { gap: 26px; flex-direction: column; align-items: flex-start; } }
+
+    /* ==========================================================
+       11. COMPLETE THE UNIFORM
+       ========================================================== */
+    .uniform { padding: 140px 48px; }
+    .uniform-head { text-align: center; margin-bottom: 60px; }
+    .uniform-head span { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; }
+    .uniform-head h2 { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; font-size: clamp(30px, 4vw, 54px); margin-top: 10px; }
+    .uniform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .uniform-card { cursor: pointer; }
+    .uniform-card .ph { height: 440px; margin-bottom: 16px; transition: transform 0.4s ease; }
+    .uniform-card:hover .ph { transform: scale(1.03); }
+    .uniform-name { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    @media (max-width: 900px) { .uniform { padding: 80px 24px; } .uniform-grid { grid-template-columns: 1fr; gap: 40px; } }
+
+    /* ==========================================================
+       12. НИЖНИЙ ЭКРАН — БРЕНДОВЫЙ СТЕЙТМЕНТ
+       ========================================================== */
+    .final-statement { height: 70vh; min-height: 480px; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+    .final-statement .ph { position: absolute; inset: 0; }
+    .final-statement .ph::after {
+      content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(13,13,11,0.9) 0%, rgba(13,13,11,0.35) 60%, rgba(13,13,11,0.6) 100%);
+    }
+    .final-statement-text { position: relative; z-index: 2; }
+    .final-statement-text .line1 { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(30px, 6vw, 68px); line-height: 1.05; }
+    .final-statement-text .line2 { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(30px, 6vw, 68px); line-height: 1.05; color: var(--olive-bright); }
+
+    /* ==========================================================
+       13. EMPTY CART STATE
+       ========================================================== */
+    .empty-bag { display: none; padding: 60px 48px 160px; text-align: center; }
+    .empty-bag.active { display: block; }
+    .empty-bag h2 { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(34px, 6vw, 64px); }
+    .empty-bag p { margin-top: 16px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase; }
+    .empty-bag .explore-btn {
+      margin-top: 40px; display: inline-block; padding: 16px 34px; border: 1px solid var(--ink);
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .empty-bag .explore-btn:hover { background: var(--ink); color: var(--bg); }
+    .empty-bag-media { max-width: 640px; height: 44vh; min-height: 300px; margin: 60px auto 0; }
+    @media (max-width: 900px) { .empty-bag { padding: 40px 24px 100px; } }
+
+    /* ==========================================================
+       14. FOOTER
+       ========================================================== */
+    .footer-marquee { overflow: hidden; padding: 26px 0; border-top: 1px solid var(--line); }
+    .footer-marquee-track { display: flex; white-space: nowrap; animation: ticker 18s linear infinite; }
+    .footer-marquee-track span { padding: 0 40px; font-family: var(--font-display); font-weight: 900; font-size: 96px; letter-spacing: 0.02em; text-transform: uppercase; color: transparent; -webkit-text-stroke: 1px var(--line); }
+    footer { padding: 80px 48px 40px; }
+    .footer-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 60px; margin-bottom: 80px; }
+    .footer-cols { display: flex; gap: 80px; flex-wrap: wrap; }
+    .footer-col h4 { margin-bottom: 18px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+    .footer-col a { display: block; margin-bottom: 12px; font-size: 14px; opacity: 0.85; }
+    .footer-newsletter { max-width: 280px; }
+    .footer-newsletter input { width: 100%; margin-top: 16px; padding: 10px 0; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-family: var(--font-body); font-size: 14px; }
+    .footer-newsletter input::placeholder { color: var(--ink-dim); }
+    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 30px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; color: var(--ink-dim); }
+
+    @media (max-width: 860px) {
+      header { padding: 20px 24px; }
+      nav { display: none; }
+      footer { padding: 60px 24px 110px; }
+      .footer-marquee-track span { font-size: 48px; }
+    }
+
+  </style>
+</head>
+<body class="has-mobile-sticky">
+
+  <div id="grain"></div>
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+
+  <!-- ================= БЕГУЩАЯ СТРОКА ================= -->
+  <div class="ticker-bar">
+    <div class="ticker-track">
+      <span>НОВЫЙ ДРОП — VOID 2026</span>
+      <span>БЕСПЛАТНАЯ ДОСТАВКА ОТ 15 000 ₽</span>
+      <span>ВОЗВРАТ В ТЕЧЕНИЕ 14 ДНЕЙ</span>
+      <span>УЧАСТНИКАМ — РАННИЙ ДОСТУП</span>
+      <span>НОВЫЙ ДРОП — VOID 2026</span>
+      <span>БЕСПЛАТНАЯ ДОСТАВКА ОТ 15 000 ₽</span>
+      <span>ВОЗВРАТ В ТЕЧЕНИЕ 14 ДНЕЙ</span>
+      <span>УЧАСТНИКАМ — РАННИЙ ДОСТУП</span>
+    </div>
+  </div>
+
+  <!-- ================= ШАПКА ================= -->
+  <header id="siteHeader">
+    <div class="logo">ACOLYTE</div>
+    <nav>
+      <ul>
+        <li><a href="#" data-cursor="link">Новинки</a></li>
+        <li><a href="#" data-cursor="link">Каталог</a></li>
+        <li><a href="#" data-cursor="link">Коллекции</a></li>
+        <li><a href="#" data-cursor="link">Лукбук</a></li>
+        <li><a href="#" data-cursor="link">Журнал</a></li>
+      </ul>
+    </nav>
+    <div class="header-icons">
+      <span data-cursor="link">Поиск</span>
+      <span data-cursor="link">Профиль</span>
+      <span data-cursor="link">Избранное</span>
+      <span class="bag-active" data-cursor="link">Корзина (<span id="headerCount">2</span>)</span>
+    </div>
+  </header>
+
+  <!-- ================= НАВИГАЦИЯ ПО РАЗДЕЛАМ ================= -->
+  <div class="rail">
+    <a href="#bag" data-label="Корзина" class="active"></a>
+    <a href="#standard" data-label="Стандарт"></a>
+    <a href="#uniform" data-label="Комплект"></a>
+  </div>
+
+  <!-- ================= ЗАГОЛОВОК СТРАНИЦЫ ================= -->
+  <section class="bag-title reveal" id="bag">
+    <div class="bag-title-eyebrow">Selected Items</div>
+    <h1>Your Bag</h1>
+    <div class="bag-title-sub">Designed for modern life.</div>
+  </section>
+
+  <!-- ================= ОСНОВНОЙ БЛОК КОРЗИНЫ ================= -->
+  <section class="bag-layout" id="bagLayout">
+
+    <div class="bag-list" id="cartList">
+      <div class="bag-list-head">
+        <span>Product</span>
+        <span>Details</span>
+      </div>
+
+      <!-- ТОВАР 1 -->
+      <div class="cart-row reveal" data-price="18900" data-qty="1">
+        <div class="cart-media" data-cursor="link">
+          <div class="ph"><div class="ph-label" data-img-index="0">Image 01</div></div>
+          <div class="cart-media-index">600 × 750</div>
+        </div>
+        <div class="cart-info">
+          <div class="cart-name">Acolyte Tech Hoodie</div>
+          <div class="cart-variant">Black / Size M</div>
+          <div class="cart-material">
+            <div class="cart-material-label">Material</div>
+            <div class="cart-material-line">450 GSM Heavy Cotton<br>Premium Construction<br>Made to Last</div>
+          </div>
+          <div class="cart-row-bottom">
+            <div class="cart-price">18 900 ₽</div>
+            <div class="qty-stepper">
+              <span class="qty-btn qty-minus" data-cursor="link">–</span>
+              <span class="qty-value">1</span>
+              <span class="qty-btn qty-plus" data-cursor="link">+</span>
+            </div>
+            <span class="cart-remove" data-cursor="link">Remove</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ТОВАР 2 -->
+      <div class="cart-row reveal" data-price="18900" data-qty="1">
+        <div class="cart-media" data-cursor="link">
+          <div class="ph"><div class="ph-label" data-img-index="0">Image 01</div></div>
+          <div class="cart-media-index">600 × 750</div>
+        </div>
+        <div class="cart-info">
+          <div class="cart-name">Cargo System Pants</div>
+          <div class="cart-variant">Olive / Size M</div>
+          <div class="cart-material">
+            <div class="cart-material-label">Material</div>
+            <div class="cart-material-line">Ripstop Technical Cotton<br>Reinforced Seams<br>Made to Last</div>
+          </div>
+          <div class="cart-row-bottom">
+            <div class="cart-price">18 900 ₽</div>
+            <div class="qty-stepper">
+              <span class="qty-btn qty-minus" data-cursor="link">–</span>
+              <span class="qty-value">1</span>
+              <span class="qty-btn qty-plus" data-cursor="link">+</span>
+            </div>
+            <span class="cart-remove" data-cursor="link">Remove</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="summary-box reveal" id="summaryBox">
+      <div class="summary-title">Summary</div>
+      <div class="summary-row">
+        <span class="label">Subtotal</span>
+        <span class="value" id="subtotalValue">37 800 ₽</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Delivery</span>
+        <span class="value dim">Calculated at checkout</span>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="summary-row summary-total">
+        <span class="label">Total</span>
+        <span class="value" id="totalValue">37 800 ₽</span>
+      </div>
+      <a class="checkout-btn" data-cursor="link">Proceed to Checkout</a>
+    </aside>
+
+  </section>
+
+  <!-- ================= МОБИЛЬНАЯ STICKY-ПАНЕЛЬ ================= -->
+  <div class="sticky-checkout" id="stickyCheckout">
+    <div class="total">Total: <span id="stickyTotal">37 800 ₽</span></div>
+    <button data-cursor="link">Checkout</button>
+  </div>
+
+  <!-- ================= ПУСТАЯ КОРЗИНА ================= -->
+  <section class="empty-bag" id="emptyBag">
+    <h2>Your Bag Is Empty</h2>
+    <p>Nothing selected yet.</p>
+    <a class="explore-btn" data-cursor="link">Explore Collection →</a>
+    <div class="empty-bag-media ph"><div class="ph-label">Движение ткани / модель</div></div>
+  </section>
+
+  <!-- ================= ACOLYTE STANDARD ================= -->
+  <section class="standard reveal" id="standard">
+    <div class="standard-eyebrow">Acolyte Standard</div>
+    <div class="standard-list">
+      <div class="standard-item"><span class="check">✓</span> Premium materials</div>
+      <div class="standard-item"><span class="check">✓</span> Designed in Russia</div>
+      <div class="standard-item"><span class="check">✓</span> Limited collections</div>
+      <div class="standard-item"><span class="check">✓</span> Long-term wear</div>
+    </div>
+  </section>
+
+  <!-- ================= COMPLETE THE UNIFORM ================= -->
+  <section class="uniform reveal" id="uniform">
+    <div class="uniform-head">
+      <span>Complete The System</span>
+      <h2>Complete The Uniform</h2>
+    </div>
+    <div class="uniform-grid">
+      <div class="uniform-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Heavyweight Tee</div></div>
+        <div class="uniform-name">Tee</div>
+      </div>
+      <div class="uniform-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Cargo System Pants</div></div>
+        <div class="uniform-name">Pants</div>
+      </div>
+      <div class="uniform-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Utility Bag</div></div>
+        <div class="uniform-name">Accessory</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= НИЖНИЙ ЭКРАН ================= -->
+  <section class="final-statement reveal">
+    <div class="ph"><div class="ph-label">Город, архитектура, движение</div></div>
+    <div class="final-statement-text">
+      <div class="line1">Less Noise.</div>
+      <div class="line2">More Purpose.</div>
+    </div>
+  </section>
+
+  <!-- ================= БЕГУЩИЙ WORDMARK ================= -->
+  <div class="footer-marquee">
+    <div class="footer-marquee-track">
+      <span>ACOLYTE — ACOLYTE — ACOLYTE — ACOLYTE —</span>
+      <span>ACOLYTE — ACOLYTE — ACOLYTE — ACOLYTE —</span>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Магазин</h4>
+          <a href="#">Outerwear</a>
+          <a href="#">Tops</a>
+          <a href="#">Bottoms</a>
+          <a href="#">Accessories</a>
+        </div>
+        <div class="footer-col">
+          <h4>О бренде</h4>
+          <a href="#">Бренд</a>
+          <a href="#">Материалы</a>
+          <a href="#">Журнал</a>
+        </div>
+        <div class="footer-col">
+          <h4>Помощь</h4>
+          <a href="#">Доставка</a>
+          <a href="#">Возврат</a>
+          <a href="#">Контакты</a>
+        </div>
+        <div class="footer-col footer-newsletter">
+          <h4>Рассылка</h4>
+          <div style="font-size:14px; color:var(--ink-dim);">Первыми узнавайте о новых дропах.</div>
+          <input type="email" placeholder="Ваш email">
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ACOLYTE. ВСЕ ПРАВА ЗАЩИЩЕНЫ.</span>
+      <span>INSTAGRAM · VK · TELEGRAM</span>
+    </div>
+  </footer>
+
+  <script>
+
+    // ---------- 1. Состояние шапки при скролле ----------
+    const header = document.getElementById('siteHeader');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > window.innerHeight * 0.25);
+    }, { passive: true });
+
+    // ---------- 2. Появление блоков при загрузке/скролле (staggered) ----------
+    const revealTargets = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 60);
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    revealTargets.forEach((el) => revealObserver.observe(el));
+
+    // ---------- 3. Подсветка активного раздела в rail ----------
+    const railLinks = document.querySelectorAll('.rail a');
+    const railSections = Array.from(railLinks).map((a) => document.querySelector(a.getAttribute('href')));
+    const railObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = `#${entry.target.id}`;
+          railLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === id));
+        }
+      });
+    }, { threshold: 0.4 });
+    railSections.forEach((s) => { if (s) railObserver.observe(s); });
+
+    // ---------- 4. Кастомный курсор ----------
+    const cursorDot = document.getElementById('cursor-dot');
+    const cursorRing = document.getElementById('cursor-ring');
+    window.addEventListener('mousemove', (e) => {
+      cursorDot.style.left = `${e.clientX}px`;
+      cursorDot.style.top = `${e.clientY}px`;
+      cursorRing.style.left = `${e.clientX}px`;
+      cursorRing.style.top = `${e.clientY}px`;
+    });
+    function bindCursor(el) {
+      el.addEventListener('mouseenter', () => cursorRing.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursorRing.classList.remove('hover'));
+    }
+    document.querySelectorAll('[data-cursor="link"]').forEach(bindCursor);
+
+    // ---------- 5. Цикл изображений товара при наведении ----------
+    const imgSequence = ['Image 01', 'Image 02', 'Detail Shot', 'Fabric Close-Up'];
+    document.querySelectorAll('.cart-media').forEach((media) => {
+      const label = media.querySelector('.ph-label');
+      let interval = null;
+      let idx = 0;
+      media.addEventListener('mouseenter', () => {
+        interval = setInterval(() => {
+          idx = (idx + 1) % imgSequence.length;
+          label.style.opacity = 0;
+          setTimeout(() => { label.textContent = imgSequence[idx]; label.style.opacity = 1; }, 150);
+        }, 700);
+      });
+      media.addEventListener('mouseleave', () => {
+        clearInterval(interval);
+        idx = 0;
+        label.style.opacity = 1;
+        label.textContent = imgSequence[0];
+      });
+    });
+
+    // ---------- 6. Пересчёт корзины (qty / remove) ----------
+    const cartList = document.getElementById('cartList');
+    const emptyBag = document.getElementById('emptyBag');
+    const bagLayout = document.getElementById('bagLayout');
+    const stickyCheckout = document.getElementById('stickyCheckout');
+
+    function formatPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
+
+    function recalcTotals() {
+      const rows = document.querySelectorAll('.cart-row');
+      let subtotal = 0;
+      let count = 0;
+      rows.forEach((row) => {
+        const price = parseInt(row.dataset.price, 10);
+        const qty = parseInt(row.dataset.qty, 10);
+        subtotal += price * qty;
+        count += qty;
+      });
+
+      const subtotalEl = document.getElementById('subtotalValue');
+      const totalEl = document.getElementById('totalValue');
+      const stickyTotalEl = document.getElementById('stickyTotal');
+      const headerCountEl = document.getElementById('headerCount');
+
+      [subtotalEl, totalEl].forEach((el) => { el.style.opacity = 0.2; });
+      setTimeout(() => {
+        subtotalEl.textContent = formatPrice(subtotal);
+        totalEl.textContent = formatPrice(subtotal);
+        stickyTotalEl.textContent = formatPrice(subtotal);
+        headerCountEl.textContent = count;
+        subtotalEl.style.opacity = 1;
+        totalEl.style.opacity = 1;
+      }, 180);
+
+      const isEmpty = rows.length === 0;
+      emptyBag.classList.toggle('active', isEmpty);
+      bagLayout.style.display = isEmpty ? 'none' : 'grid';
+      stickyCheckout.style.display = isEmpty ? 'none' : '';
+    }
+
+    function wireRow(row) {
+      const minus = row.querySelector('.qty-minus');
+      const plus = row.querySelector('.qty-plus');
+      const qtyValue = row.querySelector('.qty-value');
+      const removeBtn = row.querySelector('.cart-remove');
+
+      function updateQty(newQty) {
+        newQty = Math.max(1, newQty);
+        row.dataset.qty = newQty;
+        qtyValue.classList.add('pulse');
+        setTimeout(() => {
+          qtyValue.textContent = newQty;
+          qtyValue.classList.remove('pulse');
+        }, 150);
+        recalcTotals();
+      }
+
+      minus.addEventListener('click', () => updateQty(parseInt(row.dataset.qty, 10) - 1));
+      plus.addEventListener('click', () => updateQty(parseInt(row.dataset.qty, 10) + 1));
+
+      removeBtn.addEventListener('click', () => {
+        row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        row.style.opacity = 0;
+        row.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+          row.remove();
+          recalcTotals();
+        }, 300);
+      });
+    }
+
+    document.querySelectorAll('.cart-row').forEach(wireRow);
+    recalcTotals();
+
+  </script>
+
+</body>
+</html>

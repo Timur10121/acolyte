@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACOLYTE — Прототип страницы «Контакты» v1.0</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+
+    /* ==========================================================
+       1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (идентичны остальным страницам)
+       ========================================================== */
+    :root {
+      --bg: #0D0D0B;
+      --bg-raise: #171613;
+      --ink: #EDEAE1;
+      --ink-dim: #8C887C;
+      --olive: #6B6F52;
+      --olive-bright: #9BA179;
+      --line: #2A2925;
+
+      --font-display: 'Big Shoulders Display', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-weight: 300; overflow-x: hidden; cursor: none; }
+    @media (max-width: 860px) { body { cursor: auto; } }
+    ::selection { background: var(--olive); color: #0D0D0B; }
+    a { color: inherit; text-decoration: none; }
+    section { position: relative; }
+    button { font-family: inherit; background: none; border: none; color: inherit; cursor: pointer; }
+    input, textarea { font-family: inherit; color: inherit; }
+
+    /* ==========================================================
+       2. ЗЕРНО + КАСТОМНЫЙ КУРСОР
+       ========================================================== */
+    #grain {
+      position: fixed; inset: 0; z-index: 998; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    #cursor-dot, #cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 999; border-radius: 50%; transform: translate(-50%, -50%); }
+    #cursor-dot { width: 6px; height: 6px; background: var(--olive-bright); }
+    #cursor-ring { width: 34px; height: 34px; border: 1px solid rgba(237, 234, 225, 0.4); transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease; }
+    #cursor-ring.hover { width: 64px; height: 64px; background: rgba(155, 161, 121, 0.12); border-color: var(--olive-bright); }
+    @media (max-width: 860px) { #cursor-dot, #cursor-ring { display: none; } }
+
+    .ph {
+      position: relative; overflow: hidden;
+      background: radial-gradient(120% 140% at 15% 10%, rgba(255, 255, 255, 0.05), transparent 55%), linear-gradient(155deg, #24231f 0%, #14130f 45%, #1c1b17 100%);
+    }
+    .ph::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 9px);
+    }
+    .ph-label {
+      position: absolute; left: 0; bottom: 0; z-index: 1; font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: 0.06em; color: rgba(237, 234, 225, 0.45); padding: 16px 18px; text-transform: uppercase;
+    }
+
+    /* Медленно движущийся мягкий свет — для hero и финального экрана */
+    .soft-light { position: absolute; inset: -20%; z-index: 0; opacity: 0.5; filter: blur(60px);
+      background: radial-gradient(circle at 30% 30%, rgba(155,161,121,0.25), transparent 55%), radial-gradient(circle at 70% 70%, rgba(107,111,82,0.2), transparent 55%);
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    @keyframes drift { from { transform: translate(-3%, -2%) scale(1); } to { transform: translate(3%, 2%) scale(1.08); } }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ==========================================================
+       3. TICKER + HEADER
+       ========================================================== */
+    .ticker-bar { position: relative; z-index: 97; background: var(--bg-raise); border-bottom: 1px solid var(--line); overflow: hidden; height: 34px; display: flex; align-items: center; }
+    .ticker-track { display: flex; white-space: nowrap; animation: ticker 22s linear infinite; }
+    .ticker-track span { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); padding: 0 28px; }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    header {
+      position: fixed; top: 34px; left: 0; width: 100%; z-index: 100; display: flex; align-items: center;
+      justify-content: space-between; padding: 26px 48px; background: transparent; border-bottom: 1px solid transparent;
+      transition: background 280ms ease, padding 280ms ease, backdrop-filter 280ms ease, border-color 280ms ease, top 280ms ease;
+    }
+    header.scrolled { top: 0; padding: 16px 48px; background: rgba(13, 13, 11, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+    .logo { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: 0.14em; transition: font-size 280ms ease; }
+    header.scrolled .logo { font-size: 20px; }
+    nav ul { display: flex; gap: 34px; list-style: none; }
+    nav a { font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 500; opacity: 0.85; position: relative; }
+    nav a::after { content: ''; position: absolute; left: 0; bottom: -6px; width: 0; height: 1px; background: var(--olive-bright); transition: width 220ms ease; }
+    nav a:hover::after, nav a.active::after { width: 100%; }
+    nav a.active { opacity: 1; color: var(--olive-bright); }
+    .header-icons { display: flex; gap: 22px; align-items: center; }
+    .header-icons span { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; cursor: pointer; }
+    @media (max-width: 860px) { header { padding: 20px 24px; } nav { display: none; } }
+
+    /* ==========================================================
+       4. HERO
+       ========================================================== */
+    .contact-hero { height: 92vh; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+    .contact-hero-eyebrow { position: relative; z-index: 2; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--olive-bright); text-transform: uppercase; margin-bottom: 20px; }
+    .contact-hero h1 { position: relative; z-index: 2; font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(56px, 12vw, 160px); line-height: 0.9; }
+    .contact-hero-sub { position: relative; z-index: 2; margin-top: 30px; font-size: 15px; color: var(--ink-dim); }
+    .contact-hero-list { position: relative; z-index: 2; margin-top: 14px; font-family: var(--font-display); font-weight: 400; font-size: 22px; color: var(--ink); }
+    .scroll-hint {
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 2;
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .scroll-hint span { animation: bob 1.8s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+
+    /* ==========================================================
+       5. ОСНОВНЫЕ КОНТАКТЫ
+       ========================================================== */
+    .primary-contacts { padding: 120px 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .contact-block { background: var(--bg); padding: 60px 50px; }
+    .contact-block-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 22px; }
+    .contact-block a.big-link {
+      font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 3vw, 38px); text-transform: lowercase;
+      border-bottom: 1px solid transparent; padding-bottom: 4px; transition: border-color 0.25s ease, opacity 0.25s ease;
+    }
+    .contact-block a.big-link:hover { border-color: var(--olive-bright); opacity: 0.85; }
+    .contact-block-note { margin-top: 16px; font-size: 14px; color: var(--ink-dim); }
+    @media (max-width: 860px) { .primary-contacts { grid-template-columns: 1fr; padding: 0; } .contact-block { padding: 50px 24px; } }
+
+    /* ==========================================================
+       6. СОЦИАЛЬНЫЕ СЕТИ
+       ========================================================== */
+    .socials { padding: 100px 48px; max-width: 640px; }
+    .socials-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 30px; }
+    .social-row {
+      display: flex; justify-content: space-between; align-items: center; padding: 26px 4px;
+      border-top: 1px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: 24px; text-transform: uppercase;
+    }
+    .social-row:last-child { border-bottom: 1px solid var(--line); }
+    .social-arrow { font-family: var(--font-mono); font-size: 16px; color: var(--ink-dim); opacity: 0; transform: translateX(-10px); transition: opacity 0.25s ease, transform 0.25s ease; }
+    .social-row:hover .social-arrow { opacity: 1; transform: translateX(0); }
+    .social-row:hover { color: var(--olive-bright); }
+    @media (max-width: 860px) { .socials { padding: 70px 24px; } .social-row { font-size: 19px; } }
+
+    /* ==========================================================
+       7. SHOWROOM
+       ========================================================== */
+    .showroom { padding: 100px 48px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .showroom-inner { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 30px; }
+    .showroom-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--olive-bright); text-transform: uppercase; margin-bottom: 22px; }
+    .showroom-city { font-family: var(--font-display); font-weight: 900; font-size: clamp(30px, 5vw, 54px); text-transform: uppercase; }
+    .showroom-address { margin-top: 14px; font-size: 15px; color: var(--ink-dim); line-height: 1.7; }
+    .showroom-link {
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      border-bottom: 1px solid var(--ink-dim); padding-bottom: 3px; transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .showroom-link:hover { color: var(--olive-bright); border-color: var(--olive-bright); }
+    @media (max-width: 860px) { .showroom { padding: 70px 24px; } }
+
+    /* ==========================================================
+       8. ФОРМА ОБРАТНОЙ СВЯЗИ
+       ========================================================== */
+    .contact-form-section { padding: 130px 48px; max-width: 640px; }
+    .form-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 40px; }
+    .contact-form-title { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(30px, 4vw, 48px); margin-bottom: 50px; }
+
+    .cf-field { margin-bottom: 34px; position: relative; }
+    .cf-field label { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 10px; }
+    .cf-field input, .cf-field textarea {
+      width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--line);
+      padding: 12px 0; font-size: 16px; transition: border-color 220ms ease-out, background 220ms ease-out;
+    }
+    .cf-field textarea { resize: none; min-height: 100px; line-height: 1.6; font-size: 15px; }
+    .cf-field input::placeholder, .cf-field textarea::placeholder { color: var(--ink-dim); opacity: 0.55; }
+    .cf-field input:focus, .cf-field textarea:focus { outline: none; border-color: var(--olive-bright); background: rgba(155,161,121,0.03); }
+
+    .cf-submit {
+      margin-top: 10px; padding: 16px 40px; border: 1px solid var(--ink); font-family: var(--font-mono);
+      font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; transition: background 220ms ease-out, color 220ms ease-out;
+    }
+    .cf-submit:hover { background: var(--ink); color: var(--bg); }
+
+    .cf-thanks { display: none; text-align: center; padding: 40px 0; }
+    .cf-thanks.show { display: block; }
+    .cf-thanks h3 { font-family: var(--font-display); font-weight: 900; font-size: 30px; text-transform: uppercase; }
+    .cf-thanks p { margin-top: 12px; color: var(--ink-dim); font-size: 15px; }
+    .cf-form { transition: opacity 0.3s ease; }
+    .cf-form.hide { display: none; }
+    @media (max-width: 860px) { .contact-form-section { padding: 80px 24px; } }
+
+    /* ==========================================================
+       9. FAQ SHORTCUT
+       ========================================================== */
+    .faq-shortcut { padding: 90px 48px; border-top: 1px solid var(--line); }
+    .faq-shortcut-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 30px; }
+    .faq-links { display: flex; flex-wrap: wrap; gap: 16px 40px; }
+    .faq-links a {
+      font-size: 16px; padding-bottom: 4px; border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+    .faq-links a:hover { border-color: var(--olive-bright); color: var(--olive-bright); }
+    .faq-cta { display: block; margin-top: 30px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--olive-bright); }
+    @media (max-width: 860px) { .faq-shortcut { padding: 60px 24px; } }
+
+    /* ==========================================================
+       10. ДЛЯ СОТРУДНИЧЕСТВА
+       ========================================================== */
+    .collab { padding: 90px 48px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .collab-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--olive-bright); text-transform: uppercase; margin-bottom: 26px; }
+    .collab-tags { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 30px; }
+    .collab-tags span { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; padding: 9px 16px; border: 1px solid var(--line); color: var(--ink-dim); }
+    .collab-email { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 3vw, 32px); text-transform: lowercase; border-bottom: 1px solid transparent; padding-bottom: 4px; transition: border-color 0.2s ease; }
+    .collab-email:hover { border-color: var(--olive-bright); }
+    @media (max-width: 860px) { .collab { padding: 60px 24px; } }
+
+    /* ==========================================================
+       11. КАРТА
+       ========================================================== */
+    .map-section { padding: 0; }
+    .map-visual { position: relative; height: 60vh; min-height: 380px; overflow: hidden; cursor: pointer; }
+    .map-visual .ph { position: absolute; inset: 0; transition: transform 0.5s ease; }
+    .map-visual:hover .ph { transform: scale(1.04); }
+    .map-open {
+      position: absolute; right: 30px; bottom: 30px; z-index: 2; font-family: var(--font-mono); font-size: 12px;
+      letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 22px; background: rgba(13,13,11,0.7);
+      border: 1px solid var(--line); transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .map-visual:hover .map-open { border-color: var(--olive-bright); color: var(--olive-bright); }
+
+    /* ==========================================================
+       12. ФИНАЛЬНЫЙ ЭМОЦИОНАЛЬНЫЙ ЭКРАН
+       ========================================================== */
+    .emotional-close { height: 90vh; min-height: 560px; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; border-top: 1px solid var(--line); }
+    .emotional-close h2 { position: relative; z-index: 2; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 5.5vw, 66px); line-height: 1.2; max-width: 900px; padding: 0 24px; }
+    .emotional-close h2 .accent { color: var(--olive-bright); font-style: italic; }
+
+    /* ==========================================================
+       13. FOOTER
+       ========================================================== */
+    .footer-marquee { overflow: hidden; padding: 26px 0; border-top: 1px solid var(--line); }
+    .footer-marquee-track { display: flex; white-space: nowrap; animation: ticker 18s linear infinite; }
+    .footer-marquee-track span { padding: 0 40px; font-family: var(--font-display); font-weight: 900; font-size: 96px; letter-spacing: 0.02em; text-transform: uppercase; color: transparent; -webkit-text-stroke: 1px var(--line); }
+    footer { padding: 80px 48px 40px; }
+    .footer-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 60px; margin-bottom: 80px; }
+    .footer-cols { display: flex; gap: 80px; flex-wrap: wrap; }
+    .footer-col h4 { margin-bottom: 18px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+    .footer-col a { display: block; margin-bottom: 12px; font-size: 14px; opacity: 0.85; }
+    .footer-newsletter { max-width: 280px; }
+    .footer-newsletter input { width: 100%; margin-top: 16px; padding: 10px 0; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-family: var(--font-body); font-size: 14px; }
+    .footer-newsletter input::placeholder { color: var(--ink-dim); }
+    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 30px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; color: var(--ink-dim); }
+    @media (max-width: 860px) { footer { padding: 60px 24px 30px; } .footer-marquee-track span { font-size: 48px; } }
+
+  </style>
+</head>
+<body>
+
+  <div id="grain"></div>
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+
+  <!-- ================= БЕГУЩАЯ СТРОКА ================= -->
+  <div class="ticker-bar">
+    <div class="ticker-track">
+      <span>ОТВЕТ В ТЕЧЕНИЕ 24 ЧАСОВ</span>
+      <span>WHOLESALE И COLLABORATIONS — ОТКРЫТЫ</span>
+      <span>SHOWROOM В МОСКВЕ</span>
+      <span>EVERY CONVERSATION STARTS WITH A MESSAGE</span>
+      <span>ОТВЕТ В ТЕЧЕНИЕ 24 ЧАСОВ</span>
+      <span>WHOLESALE И COLLABORATIONS — ОТКРЫТЫ</span>
+      <span>SHOWROOM В МОСКВЕ</span>
+      <span>EVERY CONVERSATION STARTS WITH A MESSAGE</span>
+    </div>
+  </div>
+
+  <!-- ================= ШАПКА ================= -->
+  <header id="siteHeader">
+    <div class="logo">ACOLYTE</div>
+    <nav>
+      <ul>
+        <li><a href="#" data-cursor="link">Новинки</a></li>
+        <li><a href="#" data-cursor="link">Каталог</a></li>
+        <li><a href="#" data-cursor="link">Коллекции</a></li>
+        <li><a href="#" data-cursor="link">О бренде</a></li>
+        <li><a href="#" class="active" data-cursor="link">Контакты</a></li>
+      </ul>
+    </nav>
+    <div class="header-icons">
+      <span data-cursor="link">Поиск</span>
+      <span data-cursor="link">Профиль</span>
+      <span data-cursor="link">Избранное</span>
+      <span data-cursor="link">Корзина (0)</span>
+    </div>
+  </header>
+
+  <!-- ================= HERO ================= -->
+  <section class="contact-hero reveal">
+    <div class="soft-light"></div>
+    <div class="contact-hero-eyebrow">Contact</div>
+    <h1>Contact</h1>
+    <div class="contact-hero-sub">We are always available.</div>
+    <div class="contact-hero-list">Questions. Orders. Collaborations.</div>
+    <div class="scroll-hint"><span>↓</span>Scroll</div>
+  </section>
+
+  <!-- ================= ОСНОВНЫЕ КОНТАКТЫ ================= -->
+  <section class="primary-contacts">
+    <div class="contact-block reveal">
+      <div class="contact-block-label">Email</div>
+      <a class="big-link" href="mailto:hello@acolytewear.ru" data-cursor="link">hello@acolytewear.ru</a>
+      <div class="contact-block-note">Для любых вопросов.</div>
+    </div>
+    <div class="contact-block reveal">
+      <div class="contact-block-label">Customer Support</div>
+      <a class="big-link" href="mailto:support@acolytewear.ru" data-cursor="link">support@acolytewear.ru</a>
+      <div class="contact-block-note">Ответ в течение 24 часов.</div>
+    </div>
+  </section>
+
+  <!-- ================= СОЦИАЛЬНЫЕ СЕТИ ================= -->
+  <section class="socials reveal">
+    <div class="socials-eyebrow">Social</div>
+    <a class="social-row" data-cursor="link">Instagram <span class="social-arrow">→</span></a>
+    <a class="social-row" data-cursor="link">Telegram <span class="social-arrow">→</span></a>
+    <a class="social-row" data-cursor="link">VK <span class="social-arrow">→</span></a>
+    <a class="social-row" data-cursor="link">Pinterest <span class="social-arrow">→</span></a>
+  </section>
+
+  <!-- ================= SHOWROOM ================= -->
+  <section class="showroom reveal">
+    <div class="showroom-inner">
+      <div>
+        <div class="showroom-label">Showroom</div>
+        <div class="showroom-city">Moscow</div>
+        <div class="showroom-address">ул. Малая Ордынка, 15<br>Пн–Пт, 11:00 — 20:00</div>
+      </div>
+      <a class="showroom-link" data-cursor="link">Open in Maps →</a>
+    </div>
+  </section>
+
+  <!-- ================= ФОРМА ОБРАТНОЙ СВЯЗИ ================= -->
+  <section class="contact-form-section reveal">
+    <div class="form-eyebrow">Get In Touch</div>
+
+    <form class="cf-form" id="contactForm">
+      <div class="cf-field">
+        <label>Name</label>
+        <input type="text" placeholder="Ваше имя" data-cursor="link" required>
+      </div>
+      <div class="cf-field">
+        <label>Email</label>
+        <input type="email" placeholder="you@mail.com" data-cursor="link" required>
+      </div>
+      <div class="cf-field">
+        <label>Message</label>
+        <textarea placeholder="Расскажите, чем можем помочь" data-cursor="link" required></textarea>
+      </div>
+      <button type="submit" class="cf-submit" data-cursor="link">Send</button>
+    </form>
+
+    <div class="cf-thanks" id="cfThanks">
+      <h3>Thank You.</h3>
+      <p>We will reply shortly.</p>
+    </div>
+  </section>
+
+  <!-- ================= FAQ SHORTCUT ================= -->
+  <section class="faq-shortcut reveal">
+    <div class="faq-shortcut-label">Before Contacting Us</div>
+    <div class="faq-links">
+      <a href="#" data-cursor="link">Shipping</a>
+      <a href="#" data-cursor="link">Returns</a>
+      <a href="#" data-cursor="link">Size Guide</a>
+      <a href="#" data-cursor="link">Care Guide</a>
+    </div>
+    <a class="faq-cta" data-cursor="link">FAQ →</a>
+  </section>
+
+  <!-- ================= ДЛЯ СОТРУДНИЧЕСТВА ================= -->
+  <section class="collab reveal">
+    <div class="collab-label">Collaborations</div>
+    <div class="collab-tags">
+      <span>Wholesale</span>
+      <span>Styling</span>
+      <span>Editorial</span>
+      <span>Campaigns</span>
+    </div>
+    <a class="collab-email" href="mailto:partners@acolytewear.ru" data-cursor="link">partners@acolytewear.ru</a>
+  </section>
+
+  <!-- ================= КАРТА ================= -->
+  <section class="map-section">
+    <div class="map-visual" data-cursor="link">
+      <div class="ph"><div class="ph-label">Статичное изображение карты</div></div>
+      <div class="map-open">Open in Maps →</div>
+    </div>
+  </section>
+
+  <!-- ================= ФИНАЛЬНЫЙ ЭМОЦИОНАЛЬНЫЙ ЭКРАН ================= -->
+  <section class="emotional-close">
+    <div class="soft-light"></div>
+    <h2>Every conversation<br>starts with <span class="accent">a message.</span></h2>
+  </section>
+
+  <!-- ================= БЕГУЩИЙ WORDMARK ================= -->
+  <div class="footer-marquee">
+    <div class="footer-marquee-track">
+      <span>ACOLYTE — ACOLYTE — ACOLYTE — ACOLYTE —</span>
+      <span>ACOLYTE — ACOLYTE — ACOLYTE — ACOLYTE —</span>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Магазин</h4>
+          <a href="#">Outerwear</a>
+          <a href="#">Tops</a>
+          <a href="#">Bottoms</a>
+          <a href="#">Accessories</a>
+        </div>
+        <div class="footer-col">
+          <h4>О бренде</h4>
+          <a href="#">Бренд</a>
+          <a href="#">Материалы</a>
+          <a href="#">Журнал</a>
+        </div>
+        <div class="footer-col">
+          <h4>Помощь</h4>
+          <a href="#">Доставка</a>
+          <a href="#">Возврат</a>
+          <a href="#">Контакты</a>
+        </div>
+        <div class="footer-col footer-newsletter">
+          <h4>Рассылка</h4>
+          <div style="font-size:14px; color:var(--ink-dim);">Первыми узнавайте о новых дропах.</div>
+          <input type="email" placeholder="Ваш email">
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ACOLYTE. ВСЕ ПРАВА ЗАЩИЩЕНЫ.</span>
+      <span>INSTAGRAM · VK · TELEGRAM</span>
+    </div>
+  </footer>
+
+  <script>
+
+    // ---------- 1. Состояние шапки при скролле ----------
+    const header = document.getElementById('siteHeader');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > window.innerHeight * 0.4);
+    }, { passive: true });
+
+    // ---------- 2. Появление блоков при скролле ----------
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+
+    // ---------- 3. Кастомный курсор ----------
+    const cursorDot = document.getElementById('cursor-dot');
+    const cursorRing = document.getElementById('cursor-ring');
+    window.addEventListener('mousemove', (e) => {
+      cursorDot.style.left = `${e.clientX}px`;
+      cursorDot.style.top = `${e.clientY}px`;
+      cursorRing.style.left = `${e.clientX}px`;
+      cursorRing.style.top = `${e.clientY}px`;
+    });
+    document.querySelectorAll('[data-cursor="link"]').forEach((el) => {
+      el.addEventListener('mouseenter', () => cursorRing.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursorRing.classList.remove('hover'));
+    });
+
+    // ---------- 4. Форма обратной связи — превращение в "Thank you" ----------
+    const contactForm = document.getElementById('contactForm');
+    const cfThanks = document.getElementById('cfThanks');
+    contactForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      contactForm.classList.add('hide');
+      cfThanks.classList.add('show');
+    });
+
+  </script>
+
+</body>
+</html>

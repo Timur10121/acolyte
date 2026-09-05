@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACOLYTE — Прототип страницы 404 v1.0</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@200;400;600;700;900&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+
+    /* ==========================================================
+       1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (идентичны остальным страницам)
+       ========================================================== */
+    :root {
+      --bg: #0D0D0B;
+      --bg-raise: #171613;
+      --ink: #EDEAE1;
+      --ink-dim: #8C887C;
+      --olive: #6B6F52;
+      --olive-bright: #9BA179;
+      --line: #2A2925;
+
+      --font-display: 'Big Shoulders Display', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-weight: 300; overflow-x: hidden; cursor: none; }
+    @media (max-width: 860px) { body { cursor: auto; } }
+    ::selection { background: var(--olive); color: #0D0D0B; }
+    a { color: inherit; text-decoration: none; }
+    section { position: relative; }
+    button { font-family: inherit; background: none; border: none; color: inherit; cursor: pointer; }
+
+    /* ==========================================================
+       2. ЗЕРНО + КАСТОМНЫЙ КУРСОР
+       ========================================================== */
+    #grain {
+      position: fixed; inset: 0; z-index: 998; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    #cursor-dot, #cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 999; border-radius: 50%; transform: translate(-50%, -50%); }
+    #cursor-dot { width: 6px; height: 6px; background: var(--olive-bright); }
+    #cursor-ring { width: 34px; height: 34px; border: 1px solid rgba(237, 234, 225, 0.4); transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease; }
+    #cursor-ring.hover { width: 64px; height: 64px; background: rgba(155, 161, 121, 0.12); border-color: var(--olive-bright); }
+    @media (max-width: 860px) { #cursor-dot, #cursor-ring { display: none; } }
+
+    .ph {
+      position: relative; overflow: hidden;
+      background: radial-gradient(120% 140% at 15% 10%, rgba(255, 255, 255, 0.05), transparent 55%), linear-gradient(155deg, #24231f 0%, #14130f 45%, #1c1b17 100%);
+    }
+    .ph::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 9px);
+    }
+    .ph-label {
+      position: absolute; left: 0; bottom: 0; z-index: 1; font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: 0.06em; color: rgba(237, 234, 225, 0.45); padding: 16px 18px; text-transform: uppercase;
+    }
+
+    /* ==========================================================
+       3. HEADER (упрощённый — как в wireframe: LOGO / MENU / BAG)
+       ========================================================== */
+    header {
+      display: flex; align-items: center; justify-content: space-between; padding: 26px 48px;
+      border-bottom: 1px solid var(--line);
+    }
+    .logo { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: 0.14em; }
+    .header-right { display: flex; align-items: center; gap: 30px; }
+    .header-right span { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim); cursor: pointer; }
+    @media (max-width: 860px) { header { padding: 18px 24px; } }
+
+    /* ==========================================================
+       4. HERO 404
+       ========================================================== */
+    .not-found-hero {
+      height: 100vh; min-height: 640px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; overflow: hidden;
+    }
+
+    .bg-404 {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-family: var(--font-display); font-weight: 900; font-size: min(60vw, 900px); line-height: 1;
+      color: var(--ink); opacity: 0.035; letter-spacing: -0.02em; user-select: none; white-space: nowrap; z-index: 0;
+    }
+
+    .nf-code {
+      position: relative; z-index: 2; font-family: var(--font-display); font-weight: 200; letter-spacing: 0.04em;
+      font-size: clamp(120px, 16vw, 180px); line-height: 1; opacity: 0; transition: opacity 0.9s ease;
+    }
+    .nf-code.show { opacity: 1; }
+
+    .nf-tagline {
+      position: relative; z-index: 2; margin-top: 10px; font-family: var(--font-display); font-weight: 900;
+      text-transform: uppercase; font-size: clamp(28px, 4.5vw, 48px); letter-spacing: 0.01em;
+      opacity: 0; transform: translateY(10px); transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .nf-tagline.show { opacity: 1; transform: translateY(0); }
+    .nf-tagline .accent { color: var(--olive-bright); }
+
+    .nf-sub {
+      position: relative; z-index: 2; margin-top: 26px; font-size: 15px; color: var(--ink-dim); max-width: 380px;
+      opacity: 0; transform: translateY(10px); transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .nf-sub.show { opacity: 1; transform: translateY(0); }
+
+    .nf-btn {
+      position: relative; z-index: 2; margin-top: 46px; padding: 16px 38px; border: 1px solid var(--ink);
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      display: inline-flex; align-items: center; gap: 10px;
+      opacity: 0; transform: translateY(10px); transition: opacity 0.8s ease, transform 0.8s ease, background 0.25s ease, color 0.25s ease;
+    }
+    .nf-btn.show { opacity: 1; transform: translateY(0); }
+    .nf-btn:hover { background: var(--ink); color: var(--bg); }
+    .nf-btn .arrow { display: inline-block; transition: transform 0.25s ease; }
+    .nf-btn:hover .arrow { transform: translateX(6px); }
+
+    .nf-continue {
+      position: relative; z-index: 2; margin-top: 30px; font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase;
+      opacity: 0; transition: opacity 0.8s ease;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .nf-continue.show { opacity: 1; }
+    .nf-continue span.arrow-down { animation: bob 1.8s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+
+    @media (max-width: 860px) { .bg-404 { font-size: min(80vw, 520px); } }
+
+    /* ==========================================================
+       5. YOU MAY BE LOOKING FOR
+       ========================================================== */
+    .looking-for { padding: 100px 48px; border-top: 1px solid var(--line); }
+    .looking-for-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; text-align: center; margin-bottom: 50px; }
+    .looking-for-links { display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; }
+    .looking-for-links a {
+      font-family: var(--font-display); font-weight: 700; font-size: clamp(20px, 2.6vw, 30px); text-transform: uppercase;
+      color: var(--ink-dim); transition: color 0.25s ease;
+    }
+    .looking-for-links a:hover { color: var(--olive-bright); }
+    @media (max-width: 860px) { .looking-for { padding: 70px 24px; } .looking-for-links { flex-direction: column; align-items: center; gap: 26px; } }
+
+    /* ==========================================================
+       6. FEATURED
+       ========================================================== */
+    .featured-404 { padding: 40px 48px 140px; }
+    .featured-404-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase; text-align: center; margin-bottom: 50px; }
+    .featured-404-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .featured-404-card { cursor: pointer; }
+    .featured-404-card .ph { height: 420px; margin-bottom: 16px; transition: transform 0.4s ease; }
+    .featured-404-card:hover .ph { transform: scale(1.03); }
+    .featured-404-name { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .featured-404-price { margin-top: 4px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim); }
+    @media (max-width: 860px) { .featured-404 { padding: 20px 24px 90px; } .featured-404-grid { grid-template-columns: 1fr; gap: 46px; } }
+
+    /* ==========================================================
+       7. FOOTER
+       ========================================================== */
+    .footer-marquee { overflow: hidden; padding: 26px 0; border-top: 1px solid var(--line); }
+    .footer-marquee-track { display: flex; white-space: nowrap; animation: ticker 18s linear infinite; }
+    .footer-marquee-track span { padding: 0 40px; font-family: var(--font-display); font-weight: 900; font-size: 96px; letter-spacing: 0.02em; text-transform: uppercase; color: transparent; -webkit-text-stroke: 1px var(--line); }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    footer { padding: 80px 48px 40px; }
+    .footer-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 60px; margin-bottom: 80px; }
+    .footer-cols { display: flex; gap: 80px; flex-wrap: wrap; }
+    .footer-col h4 { margin-bottom: 18px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+    .footer-col a { display: block; margin-bottom: 12px; font-size: 14px; opacity: 0.85; }
+    .footer-newsletter { max-width: 280px; }
+    .footer-newsletter input { width: 100%; margin-top: 16px; padding: 10px 0; background: transparent; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-family: var(--font-body); font-size: 14px; }
+    .footer-newsletter input::placeholder { color: var(--ink-dim); }
+    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 30px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; color: var(--ink-dim); }
+    @media (max-width: 860px) { footer { padding: 60px 24px 30px; } .footer-marquee-track span { font-size: 48px; } }
+
+  </style>
+</head>
+<body>
+
+  <div id="grain"></div>
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+
+  <!-- ================= ШАПКА ================= -->
+  <header>
+    <div class="logo">ACOLYTE</div>
+    <div class="header-right">
+      <span data-cursor="link">Menu</span>
+      <span data-cursor="link">Bag (0)</span>
+    </div>
+  </header>
+
+  <!-- ================= HERO 404 ================= -->
+  <section class="not-found-hero">
+    <div class="bg-404">404</div>
+
+    <div class="nf-code" id="nfCode">404</div>
+    <h1 class="nf-tagline" id="nfTagline">Lost, <span class="accent">Not Broken.</span></h1>
+    <div class="nf-sub" id="nfSub">This page no longer exists or has moved somewhere else.</div>
+    <a class="nf-btn" id="nfBtn" data-cursor="link">Back To Home <span class="arrow">→</span></a>
+    <div class="nf-continue" id="nfContinue">Continue Exploring <span class="arrow-down">↓</span></div>
+  </section>
+
+  <!-- ================= YOU MAY BE LOOKING FOR ================= -->
+  <section class="looking-for">
+    <div class="looking-for-label">You May Be Looking For</div>
+    <div class="looking-for-links">
+      <a href="#" data-cursor="link">New Arrivals</a>
+      <a href="#" data-cursor="link">Collection</a>
+      <a href="#" data-cursor="link">About</a>
+      <a href="#" data-cursor="link">Contact</a>
+    </div>
+  </section>
+
+  <!-- ================= FEATURED ================= -->
+  <section class="featured-404">
+    <div class="featured-404-label">Featured</div>
+    <div class="featured-404-grid">
+      <div class="featured-404-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Heavyweight Tee</div></div>
+        <div class="featured-404-name">Heavyweight Tee Void</div>
+        <div class="featured-404-price">9 500 ₽</div>
+      </div>
+      <div class="featured-404-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Tech Hoodie 02</div></div>
+        <div class="featured-404-name">Tech Hoodie 02</div>
+        <div class="featured-404-price">12 900 ₽</div>
+      </div>
+      <div class="featured-404-card" data-cursor="link">
+        <div class="ph"><div class="ph-label">Cargo System Pants</div></div>
+        <div class="featured-404-name">Cargo System Pants</div>
+        <div class="featured-404-price">21 000 ₽</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= БЕГУЩИЙ WORDMARK ================= -->
+  <div class="footer-marquee">
+    <div class="footer-marquee-track">
+      <span>ACOLYTE — ACOLYTE — ACOLYTE — ACOLYTE —</span>
+      <span>ACOLYTE — ACOLYTE — ACOLYTE — ACOLYTE —</span>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Магазин</h4>
+          <a href="#">Outerwear</a>
+          <a href="#">Tops</a>
+          <a href="#">Bottoms</a>
+          <a href="#">Accessories</a>
+        </div>
+        <div class="footer-col">
+          <h4>О бренде</h4>
+          <a href="#">Бренд</a>
+          <a href="#">Материалы</a>
+          <a href="#">Журнал</a>
+        </div>
+        <div class="footer-col">
+          <h4>Помощь</h4>
+          <a href="#">Доставка</a>
+          <a href="#">Возврат</a>
+          <a href="#">Контакты</a>
+        </div>
+        <div class="footer-col footer-newsletter">
+          <h4>Рассылка</h4>
+          <div style="font-size:14px; color:var(--ink-dim);">Первыми узнавайте о новых дропах.</div>
+          <input type="email" placeholder="Ваш email">
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ACOLYTE. ВСЕ ПРАВА ЗАЩИЩЕНЫ.</span>
+      <span>Privacy · Terms</span>
+    </div>
+  </footer>
+
+  <script>
+
+    // ---------- 1. Кастомный курсор ----------
+    const cursorDot = document.getElementById('cursor-dot');
+    const cursorRing = document.getElementById('cursor-ring');
+    window.addEventListener('mousemove', (e) => {
+      cursorDot.style.left = `${e.clientX}px`;
+      cursorDot.style.top = `${e.clientY}px`;
+      cursorRing.style.left = `${e.clientX}px`;
+      cursorRing.style.top = `${e.clientY}px`;
+    });
+    document.querySelectorAll('[data-cursor="link"]').forEach((el) => {
+      el.addEventListener('mouseenter', () => cursorRing.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursorRing.classList.remove('hover'));
+    });
+
+    // ---------- 2. Последовательное появление hero-блока ----------
+    // 404 -> через 200ms текст -> потом кнопка -> потом "Continue Exploring"
+    const seq = [
+      { el: document.getElementById('nfCode'), delay: 0 },
+      { el: document.getElementById('nfTagline'), delay: 250 },
+      { el: document.getElementById('nfSub'), delay: 420 },
+      { el: document.getElementById('nfBtn'), delay: 620 },
+      { el: document.getElementById('nfContinue'), delay: 850 },
+    ];
+    seq.forEach(({ el, delay }) => setTimeout(() => el.classList.add('show'), delay));
+
+  </script>
+
+</body>
+</html>

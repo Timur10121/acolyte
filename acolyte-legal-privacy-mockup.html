@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACOLYTE — Политика конфиденциальности (Legal Center) v1.0</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+
+    /* ==========================================================
+       1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (идентичны остальным страницам)
+       ========================================================== */
+    :root {
+      --bg: #0D0D0B;
+      --bg-raise: #171613;
+      --ink: #EDEAE1;
+      --ink-dim: #8C887C;
+      --olive: #6B6F52;
+      --olive-bright: #9BA179;
+      --line: #2A2925;
+
+      --font-display: 'Big Shoulders Display', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-weight: 300; overflow-x: hidden; cursor: none; }
+    @media (max-width: 900px) { body { cursor: auto; } }
+    ::selection { background: var(--olive); color: #0D0D0B; }
+    a { color: inherit; text-decoration: none; }
+    section { position: relative; }
+    button { font-family: inherit; background: none; border: none; color: inherit; cursor: pointer; }
+
+    /* ==========================================================
+       2. КАСТОМНЫЙ КУРСОР (без зерна — юридический раздел чуть спокойнее)
+       ========================================================== */
+    #cursor-dot, #cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 999; border-radius: 50%; transform: translate(-50%, -50%); }
+    #cursor-dot { width: 6px; height: 6px; background: var(--olive-bright); }
+    #cursor-ring { width: 34px; height: 34px; border: 1px solid rgba(237, 234, 225, 0.4); transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease; }
+    #cursor-ring.hover { width: 64px; height: 64px; background: rgba(155, 161, 121, 0.12); border-color: var(--olive-bright); }
+    @media (max-width: 900px) { #cursor-dot, #cursor-ring { display: none; } }
+
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ==========================================================
+       3. HEADER
+       ========================================================== */
+    header {
+      position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 48px; border-bottom: 1px solid var(--line); background: rgba(13, 13, 11, 0.9); backdrop-filter: blur(12px);
+    }
+    .logo { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: 0.14em; }
+    .header-legal-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase; }
+    @media (max-width: 900px) { header { padding: 18px 24px; } }
+
+    /* ==========================================================
+       4. HERO
+       ========================================================== */
+    .legal-hero { padding: 110px 48px 90px; text-align: center; border-bottom: 1px solid var(--line); }
+    .legal-hero-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; color: var(--olive-bright); text-transform: uppercase; margin-bottom: 22px; }
+    .legal-hero h1 { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(38px, 6.5vw, 72px); }
+    .legal-hero-sub { margin-top: 26px; font-size: 17px; line-height: 1.8; color: var(--ink-dim); max-width: 480px; margin-left: auto; margin-right: auto; }
+    .legal-hero-updated { margin-top: 30px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase; }
+    @media (max-width: 900px) { .legal-hero { padding: 70px 24px 60px; } }
+
+    /* ---- Человеческое вступление ---- */
+    .legal-intro { max-width: 640px; margin: 60px auto 0; text-align: center; font-size: 15px; line-height: 1.8; color: var(--ink-dim); }
+    @media (max-width: 900px) { .legal-intro { margin-top: 40px; } }
+
+    /* ==========================================================
+       5. LAYOUT: STICKY TOC + КОНТЕНТ
+       ========================================================== */
+    .legal-layout { display: grid; grid-template-columns: 260px 1fr; gap: 90px; padding: 100px 48px 60px; align-items: start; max-width: 1280px; margin: 0 auto; }
+    @media (max-width: 980px) { .legal-layout { grid-template-columns: 1fr; padding: 50px 24px 30px; gap: 0; } }
+
+    /* ---- TOC (десктоп) ---- */
+    .legal-toc { position: sticky; top: 90px; }
+    .legal-toc-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 20px; }
+    .toc-item {
+      display: flex; gap: 14px; padding: 10px 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.03em;
+      color: var(--ink-dim); border-left: 1px solid transparent; padding-left: 14px; transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .toc-item .toc-num { color: var(--ink-dim); flex-shrink: 0; }
+    .toc-item:hover { color: var(--ink); }
+    .toc-item.active { color: var(--olive-bright); border-left-color: var(--olive-bright); }
+    .toc-item.active .toc-num { color: var(--olive-bright); }
+    @media (max-width: 980px) { .legal-toc { display: none; } }
+
+    /* ---- Мобильная кнопка "Содержание" + Bottom Sheet ---- */
+    .mobile-toc-trigger { display: none; }
+    @media (max-width: 980px) {
+      .mobile-toc-trigger {
+        display: flex; align-items: center; gap: 10px; padding: 16px 4px; margin-bottom: 40px;
+        border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+        font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      }
+    }
+    .sheet-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .sheet-overlay.open { opacity: 1; pointer-events: auto; }
+    .bottom-sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 201; background: var(--bg-raise);
+      border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; padding: 28px 24px 34px;
+      transform: translateY(100%); transition: transform 0.35s ease; max-height: 78vh; overflow-y: auto;
+    }
+    .bottom-sheet.open { transform: translateY(0); }
+    .bottom-sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+    .bottom-sheet-head h4 { font-family: var(--font-display); font-size: 20px; text-transform: uppercase; }
+    .bottom-sheet-close { font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim); }
+    .bottom-sheet .toc-item { font-size: 14px; padding: 14px 0 14px 14px; }
+
+    /* ==========================================================
+       6. ОСНОВНОЙ ТЕКСТ
+       ========================================================== */
+    .legal-content { max-width: 680px; }
+    .legal-section { padding-bottom: 120px; scroll-margin-top: 110px; }
+    .legal-section-num { font-family: var(--font-mono); font-size: 12px; color: var(--olive-bright); margin-bottom: 14px; }
+    .legal-section h2 {
+      font-family: var(--font-display); font-weight: 700; text-transform: uppercase; font-size: clamp(28px, 3.4vw, 40px);
+      position: relative; padding-bottom: 20px; margin-bottom: 30px;
+    }
+    .legal-section h2::after { content: ''; position: absolute; left: 0; bottom: 0; width: 60px; height: 2px; background: var(--olive-bright); }
+    .legal-section p { font-size: 17px; line-height: 1.85; color: var(--ink-dim); margin-bottom: 22px; max-width: 65ch; }
+    .legal-section p b { color: var(--ink); font-weight: 500; }
+    .legal-section ul { list-style: none; margin-bottom: 22px; }
+    .legal-section ul li { font-size: 16px; line-height: 1.9; color: var(--ink-dim); padding-left: 20px; position: relative; }
+    .legal-section ul li::before { content: '—'; position: absolute; left: 0; color: var(--olive-bright); }
+    @media (max-width: 900px) { .legal-section { padding-bottom: 80px; } .legal-section p, .legal-section ul li { font-size: 15px; } }
+
+    /* ---- Callout ---- */
+    .legal-callout { border-top: 1px solid var(--olive-bright); border-bottom: 1px solid var(--olive-bright); padding: 28px 0; margin: 40px 0; }
+    .legal-callout-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--olive-bright); text-transform: uppercase; margin-bottom: 10px; }
+    .legal-callout p { color: var(--ink); font-size: 17px; margin: 0; }
+
+    /* ---- Аккордеон внутри секции ---- */
+    .legal-accordion-item { border-top: 1px solid var(--line); }
+    .legal-accordion-item:last-child { border-bottom: 1px solid var(--line); }
+    .legal-accordion-head {
+      display: flex; justify-content: space-between; align-items: center; padding: 22px 2px; cursor: pointer;
+      font-family: var(--font-display); font-weight: 700; font-size: 18px; text-transform: uppercase;
+    }
+    .legal-accordion-icon { font-family: var(--font-mono); font-size: 15px; color: var(--ink-dim); transition: transform 0.25s ease; }
+    .legal-accordion-item.open .legal-accordion-icon { transform: rotate(45deg); color: var(--olive-bright); }
+    .legal-accordion-body { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.35s ease; }
+    .legal-accordion-item.open .legal-accordion-body { max-height: 900px; opacity: 1; padding: 0 2px 26px; }
+
+    /* ---- Cookie toggles ---- */
+    .cookie-row { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; border-top: 1px solid var(--line); }
+    .cookie-row:last-of-type { border-bottom: 1px solid var(--line); }
+    .cookie-row-label { font-size: 15px; }
+    .cookie-row-sub { margin-top: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); text-transform: uppercase; }
+    .toggle { width: 42px; height: 24px; border: 1px solid var(--line); border-radius: 20px; position: relative; flex-shrink: 0; transition: border-color 0.2s ease, background 0.2s ease; }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--ink-dim); transition: transform 0.2s ease, background 0.2s ease; }
+    .toggle.on { background: rgba(155,161,121,0.15); border-color: var(--olive-bright); }
+    .toggle.on::after { transform: translateX(18px); background: var(--olive-bright); }
+    .toggle.disabled { opacity: 0.5; cursor: not-allowed; }
+    .cookie-save-btn {
+      margin-top: 30px; padding: 14px 32px; border: 1px solid var(--ink); font-family: var(--font-mono);
+      font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; transition: background 0.2s ease, color 0.2s ease;
+    }
+    .cookie-save-btn:hover { background: var(--ink); color: var(--bg); }
+    .cookie-save-note { display: none; margin-top: 14px; font-family: var(--font-mono); font-size: 11px; color: var(--olive-bright); }
+    .cookie-save-note.show { display: block; }
+
+    /* ---- Back to top ---- */
+    .back-to-top {
+      position: fixed; right: 30px; bottom: 30px; z-index: 80; width: 48px; height: 48px; border-radius: 50%;
+      border: 1px solid var(--line); background: rgba(13,13,11,0.85); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 16px;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease, border-color 0.2s ease;
+    }
+    .back-to-top.show { opacity: 1; pointer-events: auto; }
+    .back-to-top:hover { border-color: var(--olive-bright); color: var(--olive-bright); }
+
+    /* ==========================================================
+       7. НАВИГАЦИЯ МЕЖДУ ДОКУМЕНТАМИ
+       ========================================================== */
+    .legal-doc-nav { max-width: 680px; margin: 0 auto; padding: 0 48px 60px; }
+    .next-doc {
+      display: flex; justify-content: space-between; align-items: center; padding: 30px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    }
+    .next-doc-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase; }
+    .next-doc-title { margin-top: 8px; font-family: var(--font-display); font-weight: 700; font-size: 24px; text-transform: uppercase; }
+    .next-doc-arrow { font-family: var(--font-mono); font-size: 22px; color: var(--ink-dim); transition: transform 0.2s ease; }
+    .next-doc:hover .next-doc-arrow { transform: translateX(8px); color: var(--olive-bright); }
+
+    .all-docs { margin-top: 50px; }
+    .all-docs-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 18px; }
+    .all-docs-tags { display: flex; flex-wrap: wrap; gap: 12px; }
+    .all-docs-tags a {
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; padding: 10px 18px; border: 1px solid var(--line);
+      color: var(--ink-dim); transition: border-color 0.2s ease, color 0.2s ease;
+    }
+    .all-docs-tags a.current { color: var(--olive-bright); border-color: var(--olive-bright); }
+    .all-docs-tags a:hover { color: var(--ink); border-color: var(--ink); }
+    @media (max-width: 900px) { .legal-doc-nav { padding: 0 24px 40px; } }
+
+    /* ---- Контакты для юридических вопросов ---- */
+    .legal-contact { max-width: 680px; margin: 0 auto; padding: 0 48px 100px; }
+    .legal-contact-box { border: 1px solid var(--line); padding: 36px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+    .legal-contact-box div .lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 8px; }
+    .legal-contact-box div .val { font-family: var(--font-display); font-weight: 700; font-size: 20px; text-transform: lowercase; }
+    .legal-contact-box a.btn { padding: 13px 26px; border: 1px solid var(--ink); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; transition: background 0.2s ease, color 0.2s ease; }
+    .legal-contact-box a.btn:hover { background: var(--ink); color: var(--bg); }
+    @media (max-width: 900px) { .legal-contact { padding: 0 24px 70px; } .legal-contact-box { padding: 26px; } }
+
+    /* ==========================================================
+       8. FOOTER
+       ========================================================== */
+    footer { padding: 50px 48px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    footer .logo-small { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: 0.12em; }
+    footer .footer-meta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; color: var(--ink-dim); }
+    @media (max-width: 900px) { footer { padding: 40px 24px; } }
+
+  </style>
+</head>
+<body>
+
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+
+  <!-- ================= HEADER ================= -->
+  <header>
+    <div class="logo">ACOLYTE</div>
+    <div class="header-legal-tag">Legal Center</div>
+  </header>
+
+  <!-- ================= HERO ================= -->
+  <section class="legal-hero reveal">
+    <div class="legal-hero-eyebrow">Legal</div>
+    <h1>Privacy Policy</h1>
+    <div class="legal-hero-sub">Мы ценим вашу приватность так же, как внимание к каждой детали.</div>
+    <div class="legal-hero-updated">Последнее обновление: 15 июля 2026</div>
+    <div class="legal-intro">Этот документ объясняет простым языком, какие данные мы получаем, зачем они нужны и как вы можете ими управлять. Если что-то останется непонятным — напишите нам, мы ответим лично.</div>
+  </section>
+
+  <!-- ================= LAYOUT ================= -->
+  <div class="legal-layout">
+
+    <!-- ---------- STICKY TOC ---------- -->
+    <nav class="legal-toc" id="legalToc">
+      <div class="legal-toc-label">Содержание</div>
+      <a class="toc-item active" href="#s1" data-cursor="link"><span class="toc-num">01</span>Общие положения</a>
+      <a class="toc-item" href="#s2" data-cursor="link"><span class="toc-num">02</span>Какие данные собираются</a>
+      <a class="toc-item" href="#s3" data-cursor="link"><span class="toc-num">03</span>Использование данных</a>
+      <a class="toc-item" href="#s4" data-cursor="link"><span class="toc-num">04</span>Передача данных</a>
+      <a class="toc-item" href="#s5" data-cursor="link"><span class="toc-num">05</span>Cookies</a>
+      <a class="toc-item" href="#s6" data-cursor="link"><span class="toc-num">06</span>Хранение данных</a>
+      <a class="toc-item" href="#s7" data-cursor="link"><span class="toc-num">07</span>Ваши права</a>
+      <a class="toc-item" href="#s8" data-cursor="link"><span class="toc-num">08</span>Контакты</a>
+    </nav>
+
+    <!-- ---------- КОНТЕНТ ---------- -->
+    <div class="legal-content">
+
+      <!-- Мобильная кнопка содержания -->
+      <div class="mobile-toc-trigger" id="mobileTocTrigger" data-cursor="link">☰ Содержание</div>
+
+      <!-- 01 -->
+      <div class="legal-section" id="s1">
+        <div class="legal-section-num">01</div>
+        <h2>Общие положения</h2>
+        <p>Настоящая политика определяет порядок обработки персональных данных пользователей сайта ACOLYTE и действует в отношении всей информации, которую сайт может получить о пользователе во время использования сайта, сервисов и оформления заказов.</p>
+        <p>Используя сайт, вы соглашаетесь с условиями, изложенными в этом документе. Если вы не согласны с условиями — пожалуйста, прекратите использование сайта.</p>
+      </div>
+
+      <!-- 02 -->
+      <div class="legal-section" id="s2">
+        <div class="legal-section-num">02</div>
+        <h2>Какие данные мы собираем</h2>
+        <p>Мы можем получать:</p>
+        <ul>
+          <li>Имя</li>
+          <li>Телефон</li>
+          <li>Email</li>
+          <li>Адрес доставки</li>
+          <li>Историю заказов</li>
+          <li>Данные устройства</li>
+        </ul>
+        <div class="legal-callout">
+          <div class="legal-callout-label">Важно</div>
+          <p>Мы никогда не продаём ваши персональные данные третьим лицам.</p>
+        </div>
+      </div>
+
+      <!-- 03 -->
+      <div class="legal-section" id="s3">
+        <div class="legal-section-num">03</div>
+        <h2>Использование данных</h2>
+        <p>Эти данные используются исключительно для обработки заказов, доставки, поддержки клиентов и улучшения сервиса. Мы не используем персональные данные для целей, не связанных с этими задачами, без вашего отдельного согласия.</p>
+      </div>
+
+      <!-- 04 — аккордеон -->
+      <div class="legal-section" id="s4">
+        <div class="legal-section-num">04</div>
+        <div class="legal-accordion-item open">
+          <div class="legal-accordion-head" data-cursor="link">
+            <span>Передача данных</span>
+            <span class="legal-accordion-icon">+</span>
+          </div>
+          <div class="legal-accordion-body">
+            <p>Мы передаём данные только партнёрам, необходимым для выполнения заказа — службам доставки, платёжным системам и сервисам аналитики. Все партнёры обязаны соблюдать конфиденциальность на уровне не ниже, чем указано в этой политике.</p>
+            <p>Мы не передаём данные в рекламных целях без вашего явного согласия.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 05 — Cookies с переключателями -->
+      <div class="legal-section" id="s5">
+        <div class="legal-section-num">05</div>
+        <div class="legal-accordion-item">
+          <div class="legal-accordion-head" data-cursor="link">
+            <span>Cookies</span>
+            <span class="legal-accordion-icon">+</span>
+          </div>
+          <div class="legal-accordion-body">
+            <p>Мы используем файлы cookies, чтобы сайт работал быстрее и становился удобнее.</p>
+
+            <div class="cookie-row">
+              <div>
+                <div class="cookie-row-label">Необходимые</div>
+                <div class="cookie-row-sub">Всегда включены</div>
+              </div>
+              <div class="toggle on disabled"></div>
+            </div>
+            <div class="cookie-row">
+              <div>
+                <div class="cookie-row-label">Аналитика</div>
+                <div class="cookie-row-sub">Помогает улучшать сайт</div>
+              </div>
+              <div class="toggle on" data-cursor="link"></div>
+            </div>
+            <div class="cookie-row">
+              <div>
+                <div class="cookie-row-label">Маркетинг</div>
+                <div class="cookie-row-sub">Персонализация предложений</div>
+              </div>
+              <div class="toggle" data-cursor="link"></div>
+            </div>
+
+            <button class="cookie-save-btn" id="cookieSaveBtn" data-cursor="link">Сохранить настройки</button>
+            <div class="cookie-save-note" id="cookieSaveNote">Настройки сохранены</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 06 — аккордеон -->
+      <div class="legal-section" id="s6">
+        <div class="legal-section-num">06</div>
+        <div class="legal-accordion-item">
+          <div class="legal-accordion-head" data-cursor="link">
+            <span>Хранение данных</span>
+            <span class="legal-accordion-icon">+</span>
+          </div>
+          <div class="legal-accordion-body">
+            <p>Персональные данные хранятся на защищённых серверах в течение срока, необходимого для оказания услуг, либо до момента отзыва согласия пользователем.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 07 — аккордеон -->
+      <div class="legal-section" id="s7">
+        <div class="legal-section-num">07</div>
+        <div class="legal-accordion-item">
+          <div class="legal-accordion-head" data-cursor="link">
+            <span>Ваши права</span>
+            <span class="legal-accordion-icon">+</span>
+          </div>
+          <div class="legal-accordion-body">
+            <p>Вы можете в любой момент запросить доступ к своим данным, их исправление или удаление, написав на адрес, указанный в разделе «Контакты».</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 08 -->
+      <div class="legal-section" id="s8" style="padding-bottom: 40px;">
+        <div class="legal-section-num">08</div>
+        <h2>Контакты</h2>
+        <p>По всем вопросам, связанным с обработкой персональных данных, вы можете обратиться по адресу <b>privacy@acolytewear.ru</b>.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= НАВИГАЦИЯ МЕЖДУ ДОКУМЕНТАМИ ================= -->
+  <div class="legal-doc-nav reveal">
+    <a class="next-doc" data-cursor="link">
+      <div>
+        <div class="next-doc-label">Следующий документ</div>
+        <div class="next-doc-title">Пользовательское соглашение</div>
+      </div>
+      <span class="next-doc-arrow">→</span>
+    </a>
+
+    <div class="all-docs">
+      <div class="all-docs-label">Все документы</div>
+      <div class="all-docs-tags">
+        <a href="#" class="current" data-cursor="link">Политика конфиденциальности</a>
+        <a href="#" data-cursor="link">Пользовательское соглашение</a>
+        <a href="#" data-cursor="link">Публичная оферта</a>
+        <a href="#" data-cursor="link">Cookies</a>
+        <a href="#" data-cursor="link">Условия оплаты</a>
+        <a href="#" data-cursor="link">Условия доставки</a>
+        <a href="#" data-cursor="link">Возврат и обмен</a>
+        <a href="#" data-cursor="link">Реквизиты компании</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= КОНТАКТЫ ДЛЯ ЮРИДИЧЕСКИХ ВОПРОСОВ ================= -->
+  <div class="legal-contact reveal">
+    <div class="legal-contact-box">
+      <div>
+        <div class="lbl">Юридические вопросы</div>
+        <div class="val">privacy@acolytewear.ru</div>
+      </div>
+      <a class="btn" href="mailto:privacy@acolytewear.ru" data-cursor="link">Написать</a>
+    </div>
+  </div>
+
+  <!-- ================= МОБИЛЬНАЯ BOTTOM SHEET (СОДЕРЖАНИЕ) ================= -->
+  <div class="sheet-overlay" id="sheetOverlay"></div>
+  <div class="bottom-sheet" id="bottomSheet">
+    <div class="bottom-sheet-head">
+      <h4>Содержание</h4>
+      <span class="bottom-sheet-close" id="sheetClose">Закрыть ✕</span>
+    </div>
+    <a class="toc-item" href="#s1" data-cursor="link"><span class="toc-num">01</span>Общие положения</a>
+    <a class="toc-item" href="#s2" data-cursor="link"><span class="toc-num">02</span>Какие данные собираются</a>
+    <a class="toc-item" href="#s3" data-cursor="link"><span class="toc-num">03</span>Использование данных</a>
+    <a class="toc-item" href="#s4" data-cursor="link"><span class="toc-num">04</span>Передача данных</a>
+    <a class="toc-item" href="#s5" data-cursor="link"><span class="toc-num">05</span>Cookies</a>
+    <a class="toc-item" href="#s6" data-cursor="link"><span class="toc-num">06</span>Хранение данных</a>
+    <a class="toc-item" href="#s7" data-cursor="link"><span class="toc-num">07</span>Ваши права</a>
+    <a class="toc-item" href="#s8" data-cursor="link"><span class="toc-num">08</span>Контакты</a>
+  </div>
+
+  <!-- ================= BACK TO TOP ================= -->
+  <div class="back-to-top" id="backToTop" data-cursor="link">↑</div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer>
+    <div class="logo-small">ACOLYTE</div>
+    <div class="footer-meta">© 2026 ACOLYTE. ВСЕ ПРАВА ЗАЩИЩЕНЫ.</div>
+  </footer>
+
+  <script>
+
+    // ---------- 1. Появление блоков ----------
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+
+    // ---------- 2. Кастомный курсор ----------
+    const cursorDot = document.getElementById('cursor-dot');
+    const cursorRing = document.getElementById('cursor-ring');
+    window.addEventListener('mousemove', (e) => {
+      cursorDot.style.left = `${e.clientX}px`;
+      cursorDot.style.top = `${e.clientY}px`;
+      cursorRing.style.left = `${e.clientX}px`;
+      cursorRing.style.top = `${e.clientY}px`;
+    });
+    function bindCursor(el) {
+      el.addEventListener('mouseenter', () => cursorRing.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursorRing.classList.remove('hover'));
+    }
+    document.querySelectorAll('[data-cursor="link"]').forEach(bindCursor);
+
+    // ---------- 3. Scrollspy — подсветка активного пункта содержания ----------
+    const tocItems = document.querySelectorAll('#legalToc .toc-item');
+    const legalSections = document.querySelectorAll('.legal-section');
+    const scrollspyObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = `#${entry.target.id}`;
+          tocItems.forEach((item) => item.classList.toggle('active', item.getAttribute('href') === id));
+        }
+      });
+    }, { threshold: 0.3, rootMargin: '-100px 0px -60% 0px' });
+    legalSections.forEach((s) => scrollspyObserver.observe(s));
+
+    // ---------- 4. Аккордеоны разделов ----------
+    document.querySelectorAll('.legal-accordion-head').forEach((head) => {
+      head.addEventListener('click', () => {
+        head.closest('.legal-accordion-item').classList.toggle('open');
+      });
+    });
+
+    // ---------- 5. Cookie toggles ----------
+    document.querySelectorAll('.toggle:not(.disabled)').forEach((toggle) => {
+      toggle.addEventListener('click', () => toggle.classList.toggle('on'));
+    });
+    document.getElementById('cookieSaveBtn').addEventListener('click', () => {
+      const note = document.getElementById('cookieSaveNote');
+      note.classList.add('show');
+      setTimeout(() => note.classList.remove('show'), 2400);
+    });
+
+    // ---------- 6. Мобильная Bottom Sheet содержания ----------
+    const sheetOverlay = document.getElementById('sheetOverlay');
+    const bottomSheet = document.getElementById('bottomSheet');
+    function openSheet() { sheetOverlay.classList.add('open'); bottomSheet.classList.add('open'); }
+    function closeSheet() { sheetOverlay.classList.remove('open'); bottomSheet.classList.remove('open'); }
+    document.getElementById('mobileTocTrigger').addEventListener('click', openSheet);
+    document.getElementById('sheetClose').addEventListener('click', closeSheet);
+    sheetOverlay.addEventListener('click', closeSheet);
+    document.querySelectorAll('#bottomSheet .toc-item').forEach((item) => item.addEventListener('click', closeSheet));
+
+    // ---------- 7. Back to top ----------
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+      backToTop.classList.toggle('show', window.scrollY > window.innerHeight * 1.2);
+    }, { passive: true });
+    backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  </script>
+
+</body>
+</html>
